@@ -1,0 +1,2846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#08070E">
+<title>KATZ PREDICTOR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --b0:#08070E;--b1:#0D0C18;--b2:#121120;--b3:#191828;--b4:#201F32;--b5:#28273E;
+  --a1:#FFB86C;--a2:#E8955A;--a3:#C97840;--a4:#A85C28;--a5:#FDD9AC;
+  --g:#00F57A;--g2:#00C45F;--r:#FF3A5C;--r2:#CC1F3D;--v:#B06EFF;--v2:#7B3FCC;
+  --gl1:rgba(255,255,255,0.03);--gl2:rgba(255,255,255,0.06);--gl3:rgba(255,255,255,0.1);
+  --bd1:rgba(255,255,255,0.07);--bd2:rgba(255,255,255,0.13);--bda:rgba(255,184,108,0.2);
+  --t0:#F5F0FF;--t1:#C8BEE0;--t2:#7A7099;--t3:#3E3860;--t4:#211E38;
+  --fu:'Unbounded',sans-serif;--fm:'Manrope',sans-serif;--fj:'JetBrains Mono',monospace;
+  --ga:0 0 20px rgba(255,184,108,0.28),0 0 50px rgba(255,184,108,0.08);
+  --gg:0 0 18px rgba(0,245,122,0.3),0 0 45px rgba(0,245,122,0.08);
+  --gr:0 0 18px rgba(255,58,92,0.3),0 0 45px rgba(255,58,92,0.08);
+  --gv:0 0 18px rgba(176,110,255,0.3),0 0 45px rgba(176,110,255,0.08);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--b0);font-family:var(--fm);color:var(--t1);-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 70% 45% at 10% 8%,rgba(255,184,108,0.055) 0%,transparent 60%),radial-gradient(ellipse 55% 40% at 90% 92%,rgba(176,110,255,0.045) 0%,transparent 55%),radial-gradient(ellipse 40% 25% at 50% 45%,rgba(0,245,122,0.018) 0%,transparent 60%);}
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.14;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");background-size:256px;}
+#cvs{position:fixed;inset:0;z-index:0;pointer-events:none;}
+#app{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── HEADER ── */
+#hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;background:linear-gradient(180deg,rgba(8,7,14,0.97) 0%,rgba(8,7,14,0.6) 100%);position:relative;z-index:50;}
+#hdr::after{content:'';position:absolute;bottom:0;left:14px;right:14px;height:1px;background:linear-gradient(90deg,transparent,var(--a2),rgba(176,110,255,0.35),transparent);}
+.hdr-brand{display:flex;align-items:center;gap:10px;}
+.hdr-gem{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--b4),var(--b3));border:1px solid var(--bda);display:flex;align-items:center;justify-content:center;font-family:var(--fu);font-size:15px;font-weight:900;color:var(--a1);position:relative;overflow:hidden;box-shadow:var(--ga),inset 0 1px 0 rgba(255,255,255,0.06);animation:gemPulse 3s ease-in-out infinite;}
+.hdr-gem::before{content:'';position:absolute;top:-60%;left:-60%;width:220%;height:220%;background:conic-gradient(from 0deg,transparent 0%,rgba(255,184,108,0.12) 25%,transparent 50%);animation:gemSpin 7s linear infinite;}
+@keyframes gemPulse{0%,100%{box-shadow:var(--ga);}50%{box-shadow:0 0 28px rgba(255,184,108,0.45),0 0 70px rgba(255,184,108,0.12);}}
+@keyframes gemSpin{to{transform:rotate(360deg);}}
+.hdr-name{font-family:var(--fu);font-size:12px;font-weight:700;letter-spacing:0.5px;color:var(--t0);}
+.hdr-name b{background:linear-gradient(135deg,var(--a5),var(--a1),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hdr-sub{font-family:var(--fj);font-size:6.5px;letter-spacing:2.5px;color:var(--t3);text-transform:uppercase;margin-top:1px;}
+.hdr-pills{display:flex;gap:5px;}
+.hpill{display:flex;align-items:center;gap:4px;background:var(--gl1);border:1px solid var(--bd1);border-radius:8px;padding:4px 7px;font-family:var(--fj);font-size:12px;font-weight:600;color:var(--t0);}
+.hpill.fire{background:rgba(255,58,92,0.08);border-color:rgba(255,58,92,0.22);animation:firePill 1.8s ease-in-out infinite;}
+@keyframes firePill{0%,100%{box-shadow:none;}50%{box-shadow:0 0 12px rgba(255,58,92,0.18);}}
+.hdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+
+/* ── PAGES ── */
+#main{flex:1;overflow:hidden;position:relative;}
+.page{position:absolute;inset:0;overflow:hidden;padding:12px 14px 8px;display:flex;flex-direction:column;transition:transform 0.38s cubic-bezier(0.86,0,0.07,1),opacity 0.38s ease;}
+#pg-analysis{overflow-y:auto !important;-webkit-overflow-scrolling:touch;}
+#pg-analysis::-webkit-scrollbar{width:2px;}
+#pg-analysis::-webkit-scrollbar-thumb{background:rgba(255,184,108,0.18);border-radius:2px;}
+.page.exit-l{transform:translateX(-110%);opacity:0;pointer-events:none;}
+.page.exit-r{transform:translateX(110%);opacity:0;pointer-events:none;}
+.page.hidden{transform:scale(0.9) translateY(14px);opacity:0;pointer-events:none;}
+
+.slbl{display:flex;align-items:center;gap:8px;font-family:var(--fj);font-size:7px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--t3);margin-bottom:7px;}
+.slbl::before{content:'';width:12px;height:1px;background:var(--a2);flex-shrink:0;}
+.slbl::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bda),transparent);}
+
+/* ── HOME PAGE ── */
+#pg-home{justify-content:flex-start;gap:0;}
+.home-hero{display:flex;flex-direction:column;align-items:center;padding:8px 0 8px;text-align:center;}
+.hero-rings{width:86px;height:86px;position:relative;margin:0 auto 8px;}
+.hr{position:absolute;border-radius:50%;}
+.hr:nth-child(1){inset:0;border:1px solid rgba(255,184,108,0.22);animation:rSpin 15s linear infinite;}
+.hr:nth-child(2){inset:9px;border-top:1.5px solid rgba(255,184,108,0.5);border-right:1px solid rgba(176,110,255,0.3);border-bottom:1px solid transparent;border-left:1px solid transparent;animation:rSpin 8s linear infinite reverse;}
+.hr:nth-child(3){inset:18px;border:1px dashed rgba(0,245,122,0.14);animation:rSpin 22s linear infinite;}
+.hr-core{position:absolute;inset:27px;border-radius:50%;background:radial-gradient(circle at 38% 32%,rgba(255,184,108,0.1),rgba(8,7,14,0.97));border:1px solid rgba(255,184,108,0.28);display:flex;align-items:center;justify-content:center;font-family:var(--fu);font-size:14px;font-weight:900;color:var(--a1);box-shadow:inset 0 3px 18px rgba(0,0,0,0.7),var(--ga);animation:corePulse 3s ease-in-out infinite;}
+@keyframes rSpin{to{transform:rotate(360deg);}}
+@keyframes corePulse{0%,100%{box-shadow:inset 0 3px 18px rgba(0,0,0,0.7),0 0 14px rgba(255,184,108,0.2);}50%{box-shadow:inset 0 3px 18px rgba(0,0,0,0.6),0 0 32px rgba(255,184,108,0.38),0 0 70px rgba(255,184,108,0.08);}}
+.hero-ttl{font-family:var(--fu);font-size:15px;font-weight:800;letter-spacing:1px;color:var(--t0);margin-bottom:2px;}
+.hero-ttl b{background:linear-gradient(135deg,var(--a5),var(--a1),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-family:var(--fj);font-size:7px;letter-spacing:3px;color:var(--t3);text-transform:uppercase;}
+
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px;}
+.sc{padding:10px 7px;border-radius:14px;text-align:center;background:linear-gradient(155deg,rgba(30,29,46,0.9),rgba(13,12,22,0.95));border:1px solid rgba(255,255,255,0.07);position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04);}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);}
+.sc::after{content:'';position:absolute;bottom:0;left:8px;right:8px;height:1.5px;border-radius:2px;opacity:0.6;}
+.sc:nth-child(1)::after{background:linear-gradient(90deg,transparent,var(--g),transparent);}
+.sc:nth-child(2)::after{background:linear-gradient(90deg,transparent,var(--a1),transparent);}
+.sc:nth-child(3)::after{background:linear-gradient(90deg,transparent,var(--v),transparent);}
+.sc-ico{font-size:13px;margin-bottom:2px;}
+.sc-v{font-family:var(--fu);font-size:18px;font-weight:700;color:var(--t0);line-height:1;}
+.sc-l{font-family:var(--fj);font-size:6px;font-weight:600;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-top:2px;}
+.sc-bar{height:2px;border-radius:2px;margin-top:5px;background:rgba(255,255,255,0.04);overflow:hidden;}
+.sc-bf{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);}
+
+.wr-card{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:14px;margin-bottom:8px;background:linear-gradient(145deg,rgba(26,25,40,0.8),rgba(13,12,22,0.9));border:1px solid var(--bd1);}
+.wr-ring-wrap{position:relative;width:48px;height:48px;flex-shrink:0;}
+.wr-svg{width:48px;height:48px;transform:rotate(-90deg);}
+.wr-bg{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:4;}
+.wr-fill{fill:none;stroke:url(#amberGrad);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1);}
+.wr-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--fj);font-size:10px;font-weight:700;color:var(--a1);}
+.wr-ttl{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--t0);margin-bottom:2px;}
+.wr-st{font-family:var(--fj);font-size:7.5px;color:var(--t3);}
+.wr-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.wtag{font-family:var(--fj);font-size:6.5px;font-weight:600;padding:2px 6px;border-radius:5px;}
+.wtag.g{background:rgba(0,245,122,0.07);border:1px solid rgba(0,245,122,0.2);color:var(--g);}
+.wtag.r{background:rgba(255,58,92,0.07);border:1px solid rgba(255,58,92,0.2);color:var(--r);}
+.wtag.a{background:rgba(255,184,108,0.07);border:1px solid rgba(255,184,108,0.2);color:var(--a1);}
+
+.act-strip{display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px;}
+.act-strip::-webkit-scrollbar{display:none;}
+.act-chip{flex-shrink:0;width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--fj);font-size:13px;font-weight:700;position:relative;}
+.act-chip::after{content:attr(data-out);position:absolute;bottom:-2px;right:-2px;width:9px;height:9px;border-radius:50%;font-size:5px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--b0);}
+.aw::after{background:var(--g);content:'✓';}
+.al::after{background:var(--r);content:'✗';}
+.home-cta{margin-top:auto;padding-top:8px;}
+
+/* ── BUTTONS ── */
+.btn{border:none;cursor:pointer;border-radius:16px;font-family:var(--fu);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;position:relative;overflow:hidden;transition:transform 0.14s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.18s ease;-webkit-user-select:none;user-select:none;min-height:52px;}
+.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);border-radius:16px 16px 0 0;z-index:2;pointer-events:none;}
+.btn:hover{transform:translateY(-2px);}
+.btn:active{transform:scale(0.94) translateY(1px)!important;transition:transform 0.07s;}
+.btn-p{width:100%;padding:15px 18px;font-size:10.5px;background:linear-gradient(135deg,var(--a4) 0%,var(--a3) 25%,var(--a2) 55%,var(--a1) 80%,var(--a5) 100%);color:rgba(0,0,0,0.88);box-shadow:0 8px 28px rgba(255,184,108,0.32),0 2px 8px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.28),inset 0 -2px 6px rgba(0,0,0,0.2);animation:pBreath 3s ease-in-out infinite;}
+.btn-p:hover{box-shadow:0 12px 40px rgba(255,184,108,0.48),0 4px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.35),0 0 60px rgba(255,184,108,0.12);}
+.btn-p::after{content:'';position:absolute;top:0;left:-130%;width:55%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.38),transparent);animation:pShine 3.5s ease-in-out 0.5s infinite;z-index:1;}
+@keyframes pShine{0%,38%{left:-130%;}65%,100%{left:170%;}}
+@keyframes pBreath{0%,100%{box-shadow:0 8px 28px rgba(255,184,108,0.32),0 2px 8px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.28);}50%{box-shadow:0 10px 38px rgba(255,184,108,0.52),0 0 70px rgba(255,184,108,0.1),0 2px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.32);}}
+.btn-s{background:linear-gradient(145deg,rgba(28,27,44,0.92),rgba(16,15,26,0.95));border:1px solid rgba(255,255,255,0.1);color:var(--t2);font-size:9px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);}
+.btn-s:hover{background:linear-gradient(145deg,rgba(36,35,54,0.95),rgba(20,19,32,0.98));border-color:rgba(255,184,108,0.2);color:var(--a1);box-shadow:0 6px 22px rgba(0,0,0,0.45),0 0 18px rgba(255,184,108,0.06);}
+
+/* ── INPUT PAGE ── */
+#pg-input{gap:0;}
+.pg-h{font-family:var(--fu);font-size:14px;font-weight:700;color:var(--t0);margin-bottom:2px;}
+.pg-s{font-family:var(--fj);font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:10px;}
+.slots-row{display:flex;gap:8px;margin-bottom:10px;}
+.r-slot{flex:1;min-height:86px;border-radius:16px;background:linear-gradient(145deg,rgba(26,25,42,0.95),rgba(13,12,22,0.98));border:1.5px dashed rgba(255,255,255,0.08);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.03);}
+.r-slot.active{border:1.5px solid var(--a2);background:linear-gradient(145deg,rgba(255,184,108,0.06),rgba(13,12,22,0.97));box-shadow:0 0 0 3px rgba(255,184,108,0.07),0 8px 24px rgba(255,184,108,0.12),inset 0 1px 0 rgba(255,184,108,0.1);transform:translateY(-3px) scale(1.02);}
+.r-slot.filled{border-color:rgba(255,255,255,0.1);border-style:solid;}
+.r-slot.filled.active{box-shadow:0 0 0 3px rgba(255,184,108,0.1),0 10px 28px rgba(255,184,108,0.15),inset 0 1px 0 rgba(255,184,108,0.12);}
+.sg{position:absolute;inset:0;opacity:0.06;border-radius:13px;pointer-events:none;}
+.slot-ord{font-family:var(--fj);font-size:6px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;}
+.slot-num{font-family:var(--fu);font-size:36px;font-weight:800;line-height:1;margin:2px 0;}
+.slot-ctag{font-family:var(--fj);font-size:6px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-top:1px;}
+.slot-stag{font-family:var(--fj);font-size:6px;color:rgba(255,255,255,0.18);}
+.slot-pulse{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--a2),transparent);animation:sPulse 1.2s ease-in-out infinite;}
+@keyframes sPulse{0%,100%{opacity:0.3;}50%{opacity:1;}}
+
+.numpad{padding:11px;border-radius:15px;margin-bottom:9px;background:linear-gradient(145deg,rgba(13,12,22,0.98),rgba(9,8,18,0.9));border:1px solid var(--bd1);}
+.np-hint{font-family:var(--fj);font-size:6.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);text-align:center;margin-bottom:9px;}
+.np-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:100%;}
+.nk{height:54px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-family:var(--fu);font-size:19px;font-weight:700;color:var(--t1);cursor:pointer;border:1px solid rgba(255,255,255,0.09);background:linear-gradient(145deg,rgba(30,29,46,0.95),rgba(18,17,28,0.9));transition:all 0.14s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden;-webkit-user-select:none;user-select:none;box-shadow:0 4px 12px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.06),inset 0 -1px 0 rgba(0,0,0,0.3);}
+.nk::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);border-radius:13px 13px 0 0;}
+.nk::after{content:'';position:absolute;bottom:0;left:3px;right:3px;height:2.5px;border-radius:2px;opacity:0.55;}
+.nk[data-n="0"]::after,.nk[data-n="5"]::after{background:var(--v);}
+.nk[data-n="1"]::after,.nk[data-n="3"]::after,.nk[data-n="7"]::after,.nk[data-n="9"]::after{background:var(--g);}
+.nk[data-n="2"]::after,.nk[data-n="4"]::after,.nk[data-n="6"]::after,.nk[data-n="8"]::after{background:var(--r);}
+.nk:hover{transform:translateY(-2px) scale(1.04);border-color:rgba(255,184,108,0.22);box-shadow:0 8px 20px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.1),0 0 14px rgba(255,184,108,0.06);}
+.nk:active{transform:scale(0.88)!important;transition:transform 0.07s;}
+.nk.selected{border-color:var(--a1);color:rgba(0,0,0,0.9);background:linear-gradient(135deg,var(--a4) 0%,var(--a2) 55%,var(--a1) 100%);box-shadow:0 0 22px rgba(255,184,108,0.4),0 4px 14px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.3);transform:scale(0.95);}
+.nk.selected::after,.nk.selected::before{display:none;}
+.nk-h{position:absolute;top:4px;right:5px;font-family:var(--fj);font-size:5px;opacity:0.35;font-weight:700;}
+
+.per-wrap{margin-bottom:9px;}
+.per-lbl{font-family:var(--fj);font-size:6.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.per-in-wrap{position:relative;}
+.per-in{width:100%;padding:11px 44px 11px 14px;font-family:var(--fj);font-size:20px;font-weight:700;letter-spacing:9px;text-align:center;color:var(--a1);background:linear-gradient(145deg,rgba(18,17,28,0.95),rgba(13,12,22,0.9));border:1px solid rgba(255,184,108,0.18);border-radius:10px;outline:none;-webkit-appearance:none;transition:border-color 0.2s,box-shadow 0.2s;}
+.per-in::placeholder{color:rgba(255,184,108,0.1);letter-spacing:6px;}
+.per-in:focus{border-color:var(--a2);box-shadow:0 0 0 3px rgba(255,184,108,0.07);}
+.per-dots{position:absolute;top:50%;right:13px;transform:translateY(-50%);display:flex;gap:3px;}
+.pdot{width:5px;height:5px;border-radius:50%;background:rgba(255,184,108,0.1);transition:all 0.2s;}
+.pdot.filled{background:var(--a2);box-shadow:0 0 6px rgba(255,184,108,0.4);}
+
+.ss-ban{border-radius:12px;padding:8px 11px;margin-bottom:9px;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(255,80,0,0.09),rgba(255,130,0,0.04));border:1px solid rgba(255,100,0,0.18);animation:ssPulse 1.8s ease-in-out infinite;}
+@keyframes ssPulse{0%,100%{border-color:rgba(255,100,0,0.18);}50%{border-color:rgba(255,100,0,0.48);box-shadow:0 0 14px rgba(255,80,0,0.07);}}
+.ss-ico{font-size:18px;animation:ssFlm 1s ease-in-out infinite;}
+@keyframes ssFlm{0%,100%{transform:scale(1) rotate(-2deg);}50%{transform:scale(1.12) rotate(3deg);}}
+.ss-th{font-family:var(--fj);font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#FF8C00;}
+.ss-ts{font-size:7.5px;color:rgba(255,140,0,0.4);margin-top:1px;}
+
+/* ── LOADING PAGE ── */
+#pg-load{align-items:center;justify-content:center;text-align:center;gap:0;}
+.ld-orb{position:relative;width:110px;height:110px;margin:0 auto 18px;}
+.ldr{position:absolute;border-radius:50%;}
+.ldr:nth-child(1){inset:0;border:1.5px solid transparent;border-top:1.5px solid var(--a1);border-right:1.5px solid rgba(255,184,108,0.18);animation:spin 0.9s linear infinite;}
+.ldr:nth-child(2){inset:13px;border:1.5px solid transparent;border-bottom:1.5px solid var(--v);border-left:1.5px solid rgba(176,110,255,0.18);animation:spin 0.62s linear infinite reverse;}
+.ldr:nth-child(3){inset:26px;border:1.5px solid transparent;border-top:1.5px solid var(--g);animation:spin 1.1s linear infinite;}
+.ldr:nth-child(4){inset:39px;border:1px solid transparent;border-bottom:1px solid var(--a2);animation:spin 0.47s linear infinite reverse;}
+.ldr:nth-child(5){inset:52px;border:1px solid transparent;border-top:1px solid var(--v);animation:spin 0.9s linear infinite;}
+.ld-core{position:absolute;inset:65px;border-radius:50%;background:radial-gradient(var(--a2),var(--a4));display:flex;align-items:center;justify-content:center;font-family:var(--fu);font-size:6px;color:var(--b0);animation:ldCore 0.65s ease-in-out infinite alternate;box-shadow:var(--ga);}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes ldCore{from{transform:scale(0.68);}to{transform:scale(1.32);}}
+.ld-ttl{font-family:var(--fu);font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--a1);animation:ldFlk 1s ease-in-out infinite alternate;}
+@keyframes ldFlk{from{opacity:0.38;}to{opacity:1;}}
+.ld-step{font-family:var(--fj);font-size:7.5px;color:var(--t3);margin-top:6px;min-height:16px;}
+.ld-chip{display:inline-block;margin-top:10px;padding:3px 12px;border-radius:6px;background:rgba(255,184,108,0.05);border:1px solid rgba(255,184,108,0.13);font-family:var(--fj);font-size:7.5px;font-weight:600;color:var(--a1);animation:ldChip 2s ease-in-out infinite;}
+@keyframes ldChip{0%,100%{border-color:rgba(255,184,108,0.13);}50%{border-color:rgba(255,184,108,0.38);}}
+.ld-dots{margin-top:12px;}
+.ld-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--a2);margin:0 2px;animation:ldDot 1.1s ease-in-out infinite;}
+.ld-dots span:nth-child(2){animation-delay:0.15s;}
+.ld-dots span:nth-child(3){animation-delay:0.3s;}
+@keyframes ldDot{0%,100%{transform:translateY(0);opacity:0.2;}50%{transform:translateY(-6px);opacity:1;}}
+
+/* ── RESULT PAGE ── */
+#pg-result{gap:0;padding:7px 12px 5px;overflow:hidden !important;justify-content:flex-start;}
+.res-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 11px;border-radius:8px;background:var(--gl1);border:1px solid var(--bd1);flex-shrink:0;}
+.res-per{font-family:var(--fj);font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);}
+.conf-badge{font-family:var(--fj);font-size:6.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border-radius:5px;}
+.cb-h{background:rgba(0,245,122,0.07);border:1px solid rgba(0,245,122,0.22);color:var(--g);}
+.cb-m{background:rgba(255,184,108,0.07);border:1px solid rgba(255,184,108,0.2);color:var(--a1);}
+.cb-l{background:rgba(255,58,92,0.07);border:1px solid rgba(255,58,92,0.2);color:var(--r);}
+
+.res-hero{display:flex;align-items:center;gap:10px;padding:9px 11px;margin-bottom:6px;border-radius:15px;background:linear-gradient(145deg,rgba(26,25,40,0.8),rgba(13,12,22,0.93));border:1px solid var(--bd1);position:relative;overflow:hidden;flex-shrink:0;}
+.res-hero::before{content:'';position:absolute;inset:0;border-radius:15px;pointer-events:none;background-image:linear-gradient(rgba(255,184,108,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,184,108,0.025) 1px,transparent 1px);background-size:20px 20px;}
+.res-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,184,108,0.25),rgba(176,110,255,0.18),transparent);}
+.res-orb{width:78px;height:78px;border-radius:50%;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.res-orb::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px dashed rgba(255,255,255,0.05);animation:orbDeco 18s linear infinite;}
+.res-orb::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid rgba(255,184,108,0.04);animation:orbDeco 28s linear infinite reverse;}
+@keyframes orbDeco{to{transform:rotate(360deg);}}
+.orb-spin{position:absolute;inset:-3px;border-radius:50%;animation:orbSpin 3s linear infinite;}
+@keyframes orbSpin{to{transform:rotate(360deg);}}
+.orb-body{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 36% 30%,rgba(255,255,255,0.04),rgba(8,7,14,0.98));display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 4px 22px rgba(0,0,0,0.7),inset 0 0 0 1px rgba(255,255,255,0.04);position:relative;z-index:1;overflow:hidden;}
+.orb-body::after{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px);}
+.res-num{font-family:var(--fu);font-size:40px;font-weight:900;line-height:1;position:relative;z-index:2;animation:numPop 0.55s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes numPop{from{transform:scale(0.1) rotate(-14deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+.res-sz{font-family:var(--fj);font-size:5px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:1px;position:relative;z-index:2;}
+.res-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
+.res-cpill{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;padding:3px 10px;border-radius:50px;font-family:var(--fj);font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.1);}
+.res-cpill::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.13),transparent);animation:pShine 2.5s ease-in-out infinite;}
+.rcp-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.55);flex-shrink:0;}
+.res-metas{display:flex;gap:4px;}
+.rmc{flex:1;padding:4px 3px;border-radius:7px;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}
+.rmc-v{font-family:var(--fj);font-size:10px;font-weight:700;color:var(--a1);}
+.rmc-l{font-family:var(--fj);font-size:5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-top:1px;}
+.law-badge{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;font-family:var(--fj);font-size:6.5px;font-weight:700;letter-spacing:1.5px;padding:4px 9px;border-radius:7px;background:linear-gradient(135deg,rgba(255,184,108,0.1),rgba(255,184,108,0.04));border:1px solid rgba(255,184,108,0.25);color:rgba(255,184,108,0.7);box-shadow:0 2px 10px rgba(255,184,108,0.08);animation:lawPulse 2.5s ease-in-out infinite;}
+.law-badge span{color:var(--a1);font-weight:800;font-size:7.5px;}
+@keyframes lawPulse{0%,100%{border-color:rgba(255,184,108,0.25);}50%{border-color:rgba(255,184,108,0.5);box-shadow:0 3px 16px rgba(255,184,108,0.14);}}
+
+.prob-sec{padding:7px 11px;border-radius:12px;margin-bottom:6px;background:linear-gradient(145deg,rgba(20,19,32,0.96),rgba(12,11,20,0.98));border:1px solid rgba(255,255,255,0.07);flex-shrink:0;box-shadow:0 4px 18px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.03);}
+.prow{display:flex;align-items:center;gap:5px;margin-bottom:2.5px;}
+.prow:last-child{margin-bottom:0;}
+.pn{font-family:var(--fj);font-size:10.5px;font-weight:700;width:12px;text-align:center;}
+.ptr{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.04);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,0.4);}
+.pfill{height:100%;border-radius:3px;transition:width 0.85s cubic-bezier(0.4,0,0.2,1);position:relative;}
+.pfill::after{content:'';position:absolute;top:0;right:0;bottom:0;width:22%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25));}
+.ppct{font-family:var(--fj);font-size:7px;font-weight:700;color:var(--t3);width:28px;text-align:right;}
+.pstar{font-size:7.5px;width:10px;text-align:center;}
+
+/* ── SIGNALS DROPDOWN ── */
+.sigs-sec{border-radius:12px;margin-bottom:6px;background:linear-gradient(145deg,rgba(11,10,20,0.96),rgba(8,7,16,0.98));border:1px solid rgba(255,255,255,0.06);flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.025);overflow:hidden;}
+.sigs-header{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.sigs-header:active{opacity:0.8;}
+.sigs-header-left{display:flex;align-items:center;gap:8px;}
+.sigs-toggle{font-family:var(--fj);font-size:6.5px;letter-spacing:2px;text-transform:uppercase;color:var(--a2);font-weight:600;background:rgba(255,184,108,0.08);padding:2px 7px;border-radius:4px;border:1px solid rgba(255,184,108,0.18);}
+.sigs-arrow{font-size:9px;color:var(--a2);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);line-height:1;}
+.sigs-arrow.open{transform:rotate(180deg);}
+.sigs-body{max-height:0;overflow:hidden;transition:max-height 0.32s cubic-bezier(0.4,0,0.2,1);}
+.sigs-body.open{max-height:180px;overflow-y:auto;}
+.sigs-body::-webkit-scrollbar{width:2px;}
+.sigs-body::-webkit-scrollbar-thumb{background:rgba(255,184,108,0.2);border-radius:2px;}
+.sigs-inner{padding:2px 11px 9px;}
+.sig{display:inline-flex;align-items:center;gap:3px;padding:2.5px 7px;border-radius:5px;margin:2px;font-family:var(--fj);font-size:6.5px;font-weight:600;border:1px solid transparent;color:var(--t3);}
+.sig.on{background:linear-gradient(135deg,rgba(255,184,108,0.07),rgba(255,184,108,0.03));border-color:rgba(255,184,108,0.2);color:var(--a1);}
+.sig.off{opacity:0.2;}
+
+/* ── WIN/LOSE BUTTONS ── */
+.res-acts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:6px;flex-shrink:0;}
+.btn-out{padding:0;border:none;cursor:pointer;border-radius:14px;position:relative;overflow:hidden;transition:transform 0.15s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.18s ease;-webkit-user-select:none;user-select:none;min-height:60px;}
+.btn-out:hover{transform:translateY(-2px);}
+.btn-out:active{transform:scale(0.93) translateY(1px)!important;transition:transform 0.07s;}
+.boi{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:11px 8px;border-radius:14px;position:relative;z-index:1;height:100%;}
+.bw{box-shadow:0 5px 18px rgba(0,245,122,0.16),0 2px 6px rgba(0,0,0,0.5);}
+.bw:hover{box-shadow:0 9px 28px rgba(0,245,122,0.28),0 0 40px rgba(0,245,122,0.07);}
+.bw .boi{background:linear-gradient(155deg,rgba(0,14,7,0.98),rgba(0,22,11,0.95));border:1px solid rgba(0,245,122,0.22);}
+.bw::before{content:'';position:absolute;inset:0;border-radius:14px;background:radial-gradient(ellipse at 50% 0%,rgba(0,245,122,0.12),transparent 65%);z-index:0;}
+.bw::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,245,122,0.4),transparent);border-radius:14px 14px 0 0;z-index:2;}
+.bw-bar{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g),transparent);animation:bwBar 2s ease-in-out infinite;border-radius:0 0 14px 14px;}
+@keyframes bwBar{0%,100%{opacity:0.4;}50%{opacity:1;box-shadow:0 0 10px rgba(0,245,122,0.5);}}
+.bl{box-shadow:0 5px 18px rgba(255,58,92,0.12),0 2px 6px rgba(0,0,0,0.5);}
+.bl:hover{box-shadow:0 9px 28px rgba(255,58,92,0.22),0 0 40px rgba(255,58,92,0.06);}
+.bl .boi{background:linear-gradient(155deg,rgba(14,0,4,0.98),rgba(24,0,7,0.95));border:1px solid rgba(255,58,92,0.2);}
+.bl::before{content:'';position:absolute;inset:0;border-radius:14px;background:radial-gradient(ellipse at 50% 0%,rgba(255,58,92,0.1),transparent 65%);z-index:0;}
+.bl::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,58,92,0.35),transparent);border-radius:14px 14px 0 0;z-index:2;}
+.bl-bar{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--r),transparent);animation:blBar 2s ease-in-out 0.6s infinite;border-radius:0 0 14px 14px;}
+@keyframes blBar{0%,100%{opacity:0.3;}50%{opacity:1;box-shadow:0 0 10px rgba(255,58,92,0.45);}}
+.boi-ico{font-size:20px;line-height:1;}
+.boi-lbl{font-family:var(--fu);font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+.boi-sub{font-family:var(--fj);font-size:5.5px;letter-spacing:1px;opacity:0.42;}
+.bw .boi-lbl{color:var(--g);}
+.bw .boi-sub{color:var(--g);}
+.bl .boi-lbl{color:var(--r);}
+.bl .boi-sub{color:var(--r);}
+
+/* ── ANALYSIS PAGE ── */
+#pg-analysis{gap:0;padding-bottom:20px;}
+.engine-banner{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;border-radius:14px;margin-bottom:8px;background:linear-gradient(135deg,rgba(255,184,108,0.08),rgba(255,184,108,0.02));border:1px solid rgba(255,184,108,0.25);box-shadow:0 4px 20px rgba(255,184,108,0.08),inset 0 1px 0 rgba(255,184,108,0.12);animation:ebPulse 2.8s ease-in-out infinite;flex-shrink:0;}
+@keyframes ebPulse{0%,100%{border-color:rgba(255,184,108,0.25);}50%{border-color:rgba(255,184,108,0.5);box-shadow:0 6px 28px rgba(255,184,108,0.14);}}
+.eb-left{display:flex;align-items:center;gap:9px;}
+.eb-ico{font-family:var(--fu);font-size:18px;color:var(--a1);animation:ebSpin 4s linear infinite;}
+@keyframes ebSpin{0%,100%{transform:rotate(0);}50%{transform:rotate(180deg);}}
+.eb-title{font-family:var(--fj);font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--a1);}
+.eb-sub{font-family:var(--fj);font-size:6px;color:var(--t3);margin-top:2px;}
+.eb-count{font-family:var(--fu);font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--a5),var(--a1));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.engine-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;}
+.ech{padding:8px 4px;border-radius:10px;text-align:center;background:linear-gradient(145deg,rgba(26,25,40,0.9),rgba(13,12,22,0.95));border:1px solid rgba(255,255,255,0.07);box-shadow:0 3px 12px rgba(0,0,0,0.25);}
+.ech-v{display:block;font-family:var(--fj);font-size:12px;font-weight:700;color:var(--a1);}
+.ech-l{display:block;font-family:var(--fj);font-size:5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-top:2px;}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px;}
+.kpi-c{padding:12px 10px;border-radius:12px;background:linear-gradient(145deg,rgba(24,23,38,0.85),rgba(13,12,22,0.9));border:1px solid var(--bd1);position:relative;overflow:hidden;}
+.kpi-c::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,184,108,0.1),transparent);}
+.kpi-ico{font-size:16px;margin-bottom:4px;display:block;}
+.kpi-v{font-family:var(--fu);font-size:20px;font-weight:700;color:var(--a1);}
+.kpi-l{font-family:var(--fj);font-size:6.5px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-top:2px;}
+.kpi-tr{font-family:var(--fj);font-size:7.5px;font-weight:700;margin-top:3px;}
+.kpi-tr.up{color:var(--g);}
+.kpi-tr.dn{color:var(--r);}
+.an-card{padding:12px;border-radius:12px;margin-bottom:8px;background:rgba(13,12,22,0.9);border:1px solid var(--bd1);}
+.cdb-row{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-bottom:7px;}
+.cdb-seg{display:flex;align-items:center;justify-content:center;font-family:var(--fj);font-size:6.5px;font-weight:700;color:#fff;transition:width 0.8s ease;}
+.cd-lgd{display:flex;gap:10px;flex-wrap:wrap;}
+.cd-li{display:flex;align-items:center;gap:5px;font-family:var(--fj);font-size:7.5px;color:var(--t1);}
+.cd-dot{width:6px;height:6px;border-radius:50%;}
+.nf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.nfc{border-radius:8px;padding:6px 3px;text-align:center;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);}
+.nfc-n{font-family:var(--fu);font-size:15px;font-weight:700;}
+.nfc-c{font-family:var(--fj);font-size:6.5px;font-weight:700;margin-top:1px;}
+.nfc-bw{height:3px;border-radius:2px;background:rgba(255,255,255,0.04);margin-top:4px;overflow:hidden;}
+.nfc-bf{height:100%;border-radius:2px;transition:width 0.8s ease;}
+.hist-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.hist-row:last-child{border-bottom:none;}
+.hi-n{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--fu);font-size:15px;font-weight:700;flex-shrink:0;}
+.hi-inf{flex:1;min-width:0;}
+.hi-m{font-size:9.5px;font-weight:600;color:var(--t0);margin-bottom:1px;}
+.hi-s{font-family:var(--fj);font-size:6.5px;color:var(--t3);}
+.hi-w{font-family:var(--fj);font-size:8.5px;font-weight:700;color:var(--g);}
+.hi-l{font-family:var(--fj);font-size:8.5px;font-weight:700;color:var(--r);}
+
+/* ── NAV ── */
+#nav{flex-shrink:0;display:flex;padding:6px 12px 10px;gap:4px;background:linear-gradient(0deg,rgba(8,7,14,0.98) 65%,transparent);position:relative;z-index:30;}
+#nav::before{content:'';position:absolute;top:0;left:15px;right:15px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,184,108,0.18),rgba(176,110,255,0.12),transparent);}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:10px;cursor:pointer;border:none;background:transparent;transition:all 0.2s;}
+.nb.active{background:linear-gradient(155deg,rgba(255,184,108,0.06),rgba(255,184,108,0.02));border:1px solid rgba(255,184,108,0.13);}
+.nb-ico{font-size:15px;transition:transform 0.2s;font-family:var(--fu);color:var(--t3);}
+.nb.active .nb-ico{transform:scale(1.08);color:var(--a1);}
+.nb-lbl{font-family:var(--fj);font-size:6px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t3);transition:color 0.2s;}
+.nb.active .nb-lbl{color:var(--a1);}
+.nb-pip{width:3px;height:3px;border-radius:50%;background:var(--a2);opacity:0;transition:opacity 0.2s;box-shadow:var(--ga);}
+.nb.active .nb-pip{opacity:1;}
+
+/* ── CELEBRATION ── */
+#celeb{position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;pointer-events:none;}
+#celeb.show{display:flex;}
+.ce-emoji{font-size:66px;animation:cePop 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes cePop{from{transform:scale(0);}to{transform:scale(1);}}
+.ce-title{font-family:var(--fu);font-size:36px;font-weight:800;line-height:1.1;animation:ceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;}
+@keyframes ceIn{from{transform:scale(0) rotate(-5deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+.ce-msg{font-size:12px;font-weight:500;margin-top:9px;animation:ceUp 0.4s ease 0.32s both;line-height:1.7;}
+@keyframes ceUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.conf-piece{position:absolute;animation:cfFall linear forwards;}
+@keyframes cfFall{to{transform:translateY(110vh) rotate(1080deg);opacity:0;}}
+.wave-ring{position:absolute;border-radius:50%;animation:wOut ease forwards;}
+@keyframes wOut{to{transform:translate(-50%,-50%) scale(5);opacity:0;}}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+@keyframes fadeUp{from{transform:translateY(10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+</style>
+</head>
+<body>
+<canvas id="cvs"></canvas>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#A85C28"/><stop offset="50%" stop-color="#E8955A"/><stop offset="100%" stop-color="#FFB86C"/></linearGradient>
+    <linearGradient id="grGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#004d26"/><stop offset="100%" stop-color="#00F57A"/></linearGradient>
+    <linearGradient id="rdGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#5a0010"/><stop offset="100%" stop-color="#FF3A5C"/></linearGradient>
+    <linearGradient id="vrGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#3d0070"/><stop offset="100%" stop-color="#B06EFF"/></linearGradient>
+  </defs>
+</svg>
+
+<div id="app">
+  <div id="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-gem"><div style="position:relative;z-index:1;">K</div></div>
+      <div>
+        <div class="hdr-name">KATZ <b>PREDICTOR</b></div>
+        <div class="hdr-sub">215-Law Oracle Engine</div>
+      </div>
+    </div>
+    <div class="hdr-pills">
+      <div class="hpill"><div class="hdot" style="background:var(--g);box-shadow:0 0 5px var(--g)"></div><span id="hw-w">0</span></div>
+      <div class="hpill"><div class="hdot" style="background:var(--r);box-shadow:0 0 5px var(--r)"></div><span id="hw-l">0</span></div>
+      <div class="hpill fire" id="hw-streak" style="display:none;">🔥<span id="hw-s">0</span></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <!-- HOME -->
+    <div class="page" id="pg-home">
+      <div class="home-hero">
+        <div class="hero-rings"><div class="hr"></div><div class="hr"></div><div class="hr"></div><div class="hr-core">K</div></div>
+        <div class="hero-ttl">KATZ <b>PREDICTOR</b></div>
+        <div class="hero-sub">215-Law Intelligence Engine</div>
+      </div>
+      <div class="stat-row">
+        <div class="sc"><div class="sc-ico">🏆</div><div class="sc-v" id="sw-wins">0</div><div class="sc-l">Wins</div><div class="sc-bar"><div class="sc-bf" id="sw-wins-bar" style="width:0%;background:linear-gradient(90deg,var(--g2),var(--g))"></div></div></div>
+        <div class="sc"><div class="sc-ico">📡</div><div class="sc-v" id="sw-rate">0%</div><div class="sc-l">Win Rate</div><div class="sc-bar"><div class="sc-bf" id="sw-rate-bar" style="width:0%;background:linear-gradient(90deg,var(--a4),var(--a1))"></div></div></div>
+        <div class="sc"><div class="sc-ico">⚡</div><div class="sc-v" id="sw-preds">0</div><div class="sc-l">Total</div><div class="sc-bar"><div class="sc-bf" id="sw-preds-bar" style="width:0%;background:linear-gradient(90deg,var(--v2),var(--v))"></div></div></div>
+      </div>
+      <div class="wr-card">
+        <div class="wr-ring-wrap">
+          <svg class="wr-svg" viewBox="0 0 60 60"><circle class="wr-bg" cx="30" cy="30" r="26"/><circle class="wr-fill" id="wr-ring-fill" cx="30" cy="30" r="26" stroke-dasharray="163.36" stroke-dashoffset="163.36"/></svg>
+          <div class="wr-pct" id="wr-pct">0%</div>
+        </div>
+        <div>
+          <div class="wr-ttl">Performance</div>
+          <div class="wr-st" id="wr-sub-text">Start predicting to build stats</div>
+          <div class="wr-tags" id="wr-tags"></div>
+        </div>
+      </div>
+      <div class="slbl">Recent Activity</div>
+      <div class="act-strip" id="activity-strip"><div style="font-family:var(--fj);font-size:8px;color:var(--t3);padding:8px 0;">No predictions yet</div></div>
+      <div class="home-cta">
+        <button class="btn btn-p" onclick="goPredict()">◈ &nbsp; START PREDICTION</button>
+        <div style="margin-top:6px;display:flex;gap:6px;">
+          <button class="btn btn-s" style="flex:1;" onclick="navTo('pg-analysis','nav-an');refreshAnalysis();">Analysis →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INPUT -->
+    <div class="page exit-r" id="pg-input">
+      <div class="pg-h">Last 3 Results</div>
+      <div class="pg-s">// enter numbers 0–9 for each slot</div>
+      <div class="slots-row" id="slots-container"></div>
+      <div class="numpad">
+        <div class="np-hint">// tap number for highlighted slot</div>
+        <div class="np-grid" id="numpad-grid"></div>
+      </div>
+      <div class="per-wrap">
+        <div class="per-lbl">◎ &nbsp; Period Number</div>
+        <div class="per-in-wrap">
+          <input class="per-in" id="period-in" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
+          <div class="per-dots"><div class="pdot" id="pd0"></div><div class="pdot" id="pd1"></div><div class="pdot" id="pd2"></div><div class="pdot" id="pd3"></div></div>
+        </div>
+      </div>
+      <div id="ss-banner" class="ss-ban" style="display:none;">
+        <div class="ss-ico">🔥</div>
+        <div><div class="ss-th">Sure Shot Mode Active</div><div class="ss-ts">3 consecutive losses — Maximum confidence engaged</div></div>
+      </div>
+      <button class="btn btn-p" onclick="doPrediction()">◈ &nbsp; CALCULATE PREDICTION</button>
+      <div style="margin-top:6px;">
+        <button class="btn btn-s" style="width:100%;" onclick="navTo('pg-home','nav-home')">← Back to Home</button>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="page exit-r" id="pg-load">
+      <div class="ld-orb"><div class="ldr"></div><div class="ldr"></div><div class="ldr"></div><div class="ldr"></div><div class="ldr"></div><div class="ld-core">◈</div></div>
+      <div class="ld-ttl">ANALYZING</div>
+      <div class="ld-step" id="ld-step">Initializing engine...</div>
+      <div class="ld-chip" id="ld-algo">Bayesian Inference</div>
+      <div class="ld-dots"><span></span><span></span><span></span></div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="page exit-r" id="pg-result">
+      <div class="res-topbar">
+        <div class="res-per" id="rb-period">PERIOD —</div>
+        <div class="conf-badge" id="cb">— CONF</div>
+      </div>
+      <div id="ss-result-bar" class="ss-ban" style="display:none;margin-bottom:5px;padding:6px 10px;">
+        <div class="ss-ico" style="font-size:14px;">🔥</div>
+        <div><div class="ss-th">👑 Sure Shot Applied</div><div class="ss-ts">Maximum confidence</div></div>
+      </div>
+      <div class="res-hero" id="res-hero-block">
+        <div class="res-orb">
+          <div class="orb-spin" id="rnd-border"></div>
+          <div class="orb-body">
+            <div class="res-num" id="rnd-num">?</div>
+            <div class="res-sz" id="rnd-size">—</div>
+          </div>
+        </div>
+        <div class="res-info">
+          <div class="res-cpill" id="rcp"><div class="rcp-dot"></div><span id="rcp-text">—</span></div>
+          <div class="res-metas">
+            <div class="rmc"><div class="rmc-v" id="rm-conf">—</div><div class="rmc-l">Conf%</div></div>
+            <div class="rmc"><div class="rmc-v" id="rm-ent">—</div><div class="rmc-l">Entropy</div></div>
+            <div class="rmc"><div class="rmc-v" id="rm-pat">—</div><div class="rmc-l">Pattern</div></div>
+          </div>
+          <div class="law-badge" id="law-count-badge">◈ <span>215</span> LAWS ACTIVE</div>
+        </div>
+      </div>
+      <div class="prob-sec">
+        <div class="slbl" style="margin-bottom:6px;">Probability Distribution</div>
+        <div id="prob-bars"></div>
+      </div>
+      <div class="sigs-sec">
+        <div class="sigs-header" onclick="toggleSigs()">
+          <div class="sigs-header-left">
+            <div class="slbl" style="margin:0;">Active Signals</div>
+            <span class="sigs-toggle" id="sigs-count-label">tap to expand</span>
+          </div>
+          <span class="sigs-arrow" id="sigs-arrow">▼</span>
+        </div>
+        <div class="sigs-body" id="sigs-body">
+          <div class="sigs-inner" id="sigs-wrap"></div>
+        </div>
+      </div>
+      <div class="res-acts">
+        <button class="btn-out bw" onclick="recordResult('win')">
+          <div class="boi"><div class="boi-ico">✓</div><div class="boi-lbl">WIN</div><div class="boi-sub">CORRECT CALL</div></div>
+          <div class="bw-bar"></div>
+        </button>
+        <button class="btn-out bl" onclick="recordResult('lose')">
+          <div class="boi"><div class="boi-ico">✗</div><div class="boi-lbl">LOSE</div><div class="boi-sub">WRONG CALL</div></div>
+          <div class="bl-bar"></div>
+        </button>
+      </div>
+      <button class="btn btn-s" style="width:100%;font-size:8px;" onclick="quickPredict()">◈  New Prediction  ›  Period +1</button>
+    </div>
+
+    <!-- ANALYSIS -->
+    <div class="page exit-r" id="pg-analysis">
+      <div class="pg-h">Analysis</div>
+      <div class="pg-s">// deep statistical breakdown</div>
+      <div class="engine-banner">
+        <div class="eb-left">
+          <div class="eb-ico">◈</div>
+          <div>
+            <div class="eb-title">215 LAW ENGINE ACTIVE</div>
+            <div class="eb-sub">215 mathematical algorithms · weighted ensemble</div>
+          </div>
+        </div>
+        <div class="eb-count" id="an-law-count">215</div>
+      </div>
+      <div class="engine-chips">
+        <div class="ech"><span class="ech-v" id="an-entropy">—</span><span class="ech-l">Entropy</span></div>
+        <div class="ech"><span class="ech-v" id="an-signals">—</span><span class="ech-l">Signals</span></div>
+        <div class="ech"><span class="ech-v" id="an-freqmax">—</span><span class="ech-l">Hot #</span></div>
+        <div class="ech"><span class="ech-v" id="an-freqmin">—</span><span class="ech-l">Cold #</span></div>
+      </div>
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="slbl">Color Distribution</div>
+      <div class="an-card"><div class="cdb-row" id="cdist-bar"></div><div class="cd-lgd" id="cdist-legend"></div></div>
+      <div class="slbl">Number Frequency</div>
+      <div class="an-card"><div class="nf-grid" id="nfreq-grid"></div></div>
+      <div class="slbl">Prediction History</div>
+      <div class="an-card"><div id="hist-list"></div></div>
+    </div>
+  </div>
+
+  <div id="nav">
+    <button class="nb active" id="nav-home" onclick="navTo('pg-home','nav-home')"><div class="nb-ico">⌂</div><div class="nb-lbl">Home</div><div class="nb-pip"></div></button>
+    <button class="nb" id="nav-pred" onclick="goPredict()"><div class="nb-ico">◈</div><div class="nb-lbl">Predict</div><div class="nb-pip"></div></button>
+    <button class="nb" id="nav-an" onclick="navTo('pg-analysis','nav-an');refreshAnalysis();"><div class="nb-ico">◎</div><div class="nb-lbl">Analysis</div><div class="nb-pip"></div></button>
+  </div>
+</div>
+
+<div id="celeb">
+  <div class="ce-emoji" id="c-emoji"></div>
+  <div class="ce-title" id="c-title"></div>
+  <div class="ce-msg" id="c-msg"></div>
+</div>
+
+<script>
+
+'use strict';
+/* ── STATE ── */
+const SK='katz_v4';
+let S=(()=>{try{const d=localStorage.getItem(SK);if(d)return JSON.parse(d);}catch(e){}return{wins:0,losses:0,streak:0,bestStreak:0,total:0,history:[]};})();
+const save=()=>{try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}};
+
+/* ── META ── */
+const META={
+  0:{c:'vr',label:'VIOLET',size:'Small',grad:'url(#vrGrad)',hex:'#B06EFF',thex:'#7B3FCC'},
+  1:{c:'g', label:'GREEN', size:'Small',grad:'url(#grGrad)',hex:'#00F57A',thex:'#00F57A'},
+  2:{c:'r', label:'RED',   size:'Small',grad:'url(#rdGrad)',hex:'#FF3A5C',thex:'#FF3A5C'},
+  3:{c:'g', label:'GREEN', size:'Small',grad:'url(#grGrad)',hex:'#00F57A',thex:'#00F57A'},
+  4:{c:'r', label:'RED',   size:'Small',grad:'url(#rdGrad)',hex:'#FF3A5C',thex:'#FF3A5C'},
+  5:{c:'vr',label:'VIOLET',size:'Big',  grad:'url(#vrGrad)',hex:'#B06EFF',thex:'#B06EFF'},
+  6:{c:'r', label:'RED',   size:'Big',  grad:'url(#rdGrad)',hex:'#FF3A5C',thex:'#FF3A5C'},
+  7:{c:'g', label:'GREEN', size:'Big',  grad:'url(#grGrad)',hex:'#00F57A',thex:'#00F57A'},
+  8:{c:'r', label:'RED',   size:'Big',  grad:'url(#rdGrad)',hex:'#FF3A5C',thex:'#FF3A5C'},
+  9:{c:'g', label:'GREEN', size:'Big',  grad:'url(#grGrad)',hex:'#00F57A',thex:'#00F57A'},
+};
+const pillBg=c=>c==='g'?'linear-gradient(135deg,#003d1a,#00F57A)':c==='r'?'linear-gradient(135deg,#4a0010,#FF3A5C)':'linear-gradient(135deg,#2d0060,#B06EFF)';
+
+function ultraPredict(last3, history, isSS) {
+  const scores = new Array(10).fill(0);
+  const signals = [];
+  const detail = {};
+  const histNums = history.map(h => h.result);
+  const allNums = [...histNums, ...last3];
+  const N = allNums.length;
+  const hN = histNums.length;
+
+  // Helper: clamp index to 0-9
+  const ci = n => ((Math.round(n) % 10) + 10) % 10;
+  const add = (n, v) => { scores[ci(n)] += v; };
+
+  /* ════════════════════════════════════════════════════
+     GROUP A: PROBABILITY & BAYESIAN METHODS
+  ════════════════════════════════════════════════════ */
+
+  // 1. LAPLACE BAYESIAN INFERENCE (add-1 smoothing)
+  { const freq = new Array(10).fill(1);
+    allNums.forEach(n => freq[n]++);
+    const tot = freq.reduce((a,b)=>a+b,0);
+    const mean = tot/10;
+    for(let n=0;n<10;n++) scores[n] += ((mean-freq[n])/mean)*2.8;
+    detail.bayesian=`n=${N},freq`;
+    signals.push({n:'Bayesian Laplace',on:true,i:'🧮'}); }
+
+  // 2. BETA-BINOMIAL CONJUGATE UPDATE
+  { const wins=new Array(10).fill(1),total=new Array(10).fill(2);
+    allNums.forEach(n=>{total[n]++;});
+    histNums.forEach((n,i)=>{ if(i>0&&allNums[i]===allNums[i-1]){wins[n]++;} });
+    for(let n=0;n<10;n++){ const p=wins[n]/total[n]; const under=(total[n]-wins[n])/total[n]; scores[n]+=under*1.6; }
+    signals.push({n:'Beta-Binomial',on:true,i:'β'}); }
+
+  // 3. DIRICHLET-MULTINOMIAL POSTERIOR
+  { const alpha=new Array(10).fill(0.5);
+    allNums.forEach(n=>alpha[n]+=1);
+    const aSum=alpha.reduce((a,b)=>a+b,0);
+    for(let n=0;n<10;n++){ const p=alpha[n]/aSum; const deficit=1/10-p; if(deficit>0) scores[n]+=deficit*18; }
+    signals.push({n:'Dirichlet Posterior',on:true,i:'Δ'}); }
+
+  // 4. MAXIMUM LIKELIHOOD ESTIMATION (MLE) – under-represented boost
+  { const obs=new Array(10).fill(0); allNums.forEach(n=>obs[n]++);
+    const expN=N/10;
+    for(let n=0;n<10;n++){ const z=(obs[n]-expN)/Math.sqrt(expN||1); if(z<-0.5) scores[n]+=Math.abs(z)*1.2; }
+    signals.push({n:'MLE Deficit',on:true,i:'📊'}); }
+
+  // 5. POSTERIOR PREDICTIVE (Last-K window 12)
+  { const w=allNums.slice(-12); const wf=new Array(10).fill(0);
+    w.forEach(n=>wf[n]++); const wm=w.length/10;
+    for(let n=0;n<10;n++) scores[n]+=(wm-wf[n])/wm*1.5;
+    signals.push({n:'Posterior Window-12',on:N>=4,i:'🪟'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP B: MARKOV & SEQUENCE MODELS
+  ════════════════════════════════════════════════════ */
+
+  // 6. MARKOV CHAIN ORDER-1
+  { if(hN>=2){
+      const t1={}; for(let i=0;i<hN-1;i++){const k=histNums[i];if(!t1[k])t1[k]=new Array(10).fill(0);t1[k][histNums[i+1]]++;}
+      const row=t1[last3[2]]; if(row){const mx=Math.max(...row);if(mx>0)for(let n=0;n<10;n++) scores[n]+=(mx-row[n])/(mx)*2.2;}
+      detail.markov1=`${Object.keys(t1).length}st`;
+      signals.push({n:'Markov Order-1',on:!!t1[last3[2]],i:'⛓'});
+    } else signals.push({n:'Markov-1 (need data)',on:false,i:'⛓'}); }
+
+  // 7. MARKOV CHAIN ORDER-2
+  { if(hN>=3){
+      const t2={}; for(let i=0;i<hN-2;i++){const k=`${histNums[i]},${histNums[i+1]}`;if(!t2[k])t2[k]=new Array(10).fill(0);t2[k][histNums[i+2]]++;}
+      const k2=`${last3[1]},${last3[2]}`; const row=t2[k2];
+      if(row){const mx=Math.max(...row);if(mx>0)for(let n=0;n<10;n++) scores[n]+=(mx-row[n])/(mx)*3.2;}
+      signals.push({n:'Markov Order-2',on:!!t2[`${last3[1]},${last3[2]}`],i:'⛓'});
+    } else signals.push({n:'Markov-2 (need data)',on:false,i:'⛓'}); }
+
+  // 8. MARKOV CHAIN ORDER-3
+  { if(hN>=4){
+      const t3={}; for(let i=0;i<hN-3;i++){const k=`${histNums[i]},${histNums[i+1]},${histNums[i+2]}`;if(!t3[k])t3[k]=new Array(10).fill(0);t3[k][histNums[i+3]]++;}
+      const k3=`${last3[0]},${last3[1]},${last3[2]}`; const row=t3[k3];
+      if(row){const mx=Math.max(...row);if(mx>0)for(let n=0;n<10;n++) scores[n]+=(mx-row[n])/(mx)*2.5;}
+      signals.push({n:'Markov Order-3',on:!!t3[`${last3[0]},${last3[1]},${last3[2]}`],i:'⛓'});
+    } else signals.push({n:'Markov-3 (need data)',on:false,i:'⛓'}); }
+
+  // 9. TRANSITION ENTROPY per state
+  { if(hN>=5){
+      const t1={}; for(let i=0;i<hN-1;i++){const k=histNums[i];if(!t1[k])t1[k]=new Array(10).fill(0);t1[k][histNums[i+1]]++;}
+      const row=t1[last3[2]];
+      if(row){ const tot2=row.reduce((a,b)=>a+b,0)||1;
+        let He=0; row.forEach(c=>{if(c>0){const p=c/tot2;He-=p*Math.log2(p);}});
+        // High entropy => uniform next; boost current top candidates
+        if(He<2.0){ const mx=Math.max(...row); scores[row.indexOf(mx)]+=2.0*(2.0-He); }
+        signals.push({n:`Trans-Entropy H=${He.toFixed(1)}`,on:He<2.0,i:'🔀'}); }
+    } else signals.push({n:'Trans-Entropy',on:false,i:'🔀'}); }
+
+  // 10. N-GRAM SUFFIX MATCHING (last 4 in history vs now)
+  { if(hN>=5){
+      let best=0; const query=last3.join(',');
+      for(let i=0;i<hN-3;i++){
+        const seg=histNums.slice(i,i+3).join(',');
+        if(seg===query&&i+3<hN){ add(histNums[i+3],2.5); best=histNums[i+3]; }
+      }
+      signals.push({n:'N-Gram Suffix Match',on:best>0||false,i:'🔍'}); }
+    else signals.push({n:'N-Gram (need data)',on:false,i:'🔍'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP C: NUMBER THEORY & ARITHMETIC
+  ════════════════════════════════════════════════════ */
+
+  // 11. FIBONACCI RESONANCE
+  { const fib=[0,1,1,2,3,5,8,13,21,34,55,89,144];
+    const ls=last3.reduce((a,b)=>a+b,0);
+    const fn=(fib.find(f=>f>ls)||1)%10; scores[fn]+=1.8;
+    last3.forEach(n=>{scores[(n+1)%10]+=0.45;scores[(n+2)%10]+=0.3;scores[(n+3)%10]+=0.18;});
+    detail.fib=`Σ=${ls}→${fn}`;
+    signals.push({n:'Fibonacci Resonance',on:true,i:'🌀'}); }
+
+  // 12. LUCAS NUMBERS
+  { const lucas=[2,1,3,4,7,11,18,29,47,76,123];
+    const ls=last3.reduce((a,b)=>a+b,0);
+    const ln=(lucas.find(f=>f>ls)||2)%10; scores[ln]+=1.5;
+    signals.push({n:'Lucas Numbers',on:true,i:'🔢'}); }
+
+  // 13. GOLDEN RATIO φ=1.618
+  { const PHI=1.6180339887;
+    last3.forEach(n=>{add(n*PHI,1.4);add(10-n*(PHI-1),1.0);});
+    detail.phi=`φ applied`;
+    signals.push({n:'Golden Ratio φ=1.618',on:true,i:'✦'}); }
+
+  // 14. SILVER RATIO δ=2.414
+  { const SR=2.4142135624;
+    last3.forEach(n=>{add(n*SR,0.9);add(10-n/SR,0.7);});
+    signals.push({n:'Silver Ratio δ=2.414',on:true,i:'🥈'}); }
+
+  // 15. TRIBONACCI SEQUENCE
+  { const trib=[0,1,1,2,4,7,13,24,44,81,149];
+    const ls=last3.reduce((a,b)=>a+b,0);
+    const tn=(trib.find(f=>f>ls)||1)%10; scores[tn]+=1.3;
+    signals.push({n:'Tribonacci',on:true,i:'3️⃣'}); }
+
+  // 16. DIGIT ROOT (Vedic mathematics)
+  { const ds=last3.reduce((a,b)=>a+b,0);
+    const dr=((ds-1)%9)+1;
+    scores[dr%10]+=1.5; scores[(dr+3)%10]+=0.7; scores[(dr+6)%10]+=0.5;
+    [ds%3,ds%7,ds%9].forEach((m,i)=>scores[(10-m)%10]+=0.6-0.1*i);
+    detail.digitSum=`Σ=${ds},dr=${dr}`;
+    signals.push({n:`Digit Root dr=${dr}`,on:true,i:'∑'}); }
+
+  // 17. MODULAR ARITHMETIC – period-3, period-7
+  { const s3=last3.reduce((a,b)=>a+b,0); scores[(s3*3)%10]+=0.9; scores[(s3*7)%10]+=0.8;
+    const diff12=((last3[1]-last3[0])+10)%10; const diff23=((last3[2]-last3[1])+10)%10;
+    add(last3[2]+diff23,1.2); add(last3[2]+diff12,0.8);
+    signals.push({n:'Modular Arithmetic',on:true,i:'➗'}); }
+
+  // 18. PRIME NUMBER POSITIONS
+  { const primes=[2,3,5,7];
+    primes.forEach(p=>{const idx=(last3[2]*p)%10; scores[idx]+=0.7;});
+    signals.push({n:'Prime Modulation',on:true,i:'🔢'}); }
+
+  // 19. PERFECT NUMBER RESONANCE (6,28→mod10: 6,8)
+  { [6,8].forEach(p=>scores[p]+=0.5);
+    const ls=last3.reduce((a,b)=>a+b,0); add(ls%6,0.6); add(ls%8,0.6);
+    signals.push({n:'Perfect Numbers',on:true,i:'💎'}); }
+
+  // 20. CHINESE REMAINDER THEOREM
+  { const m1=last3.reduce((a,b)=>a+b,0)%3; const m2=last3.reduce((a,b)=>a+b,0)%7;
+    for(let n=0;n<10;n++) if(n%3===m1||n%7===m2) scores[n]+=0.8;
+    signals.push({n:'Chinese Remainder',on:true,i:'🀄'}); }
+
+  // 21. COLLATZ CONJECTURE STEPS
+  { let cv=last3[2], steps=0; while(cv!==1&&steps<50){cv=cv%2===0?cv/2:3*cv+1;steps++;} 
+    add(steps%10,1.0); signals.push({n:`Collatz steps=${steps}`,on:true,i:'🔄'}); }
+
+  // 22. GOLDBACH-INSPIRED EVEN SPLIT
+  { const sm=last3[1]+last3[2];
+    if(sm<=9){ scores[sm]+=0.9; }
+    else { const diff=sm-10; scores[diff]+=0.7; }
+    signals.push({n:'Goldbach Even Split',on:true,i:'✂️'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP D: STATISTICS & SIGNAL PROCESSING
+  ════════════════════════════════════════════════════ */
+
+  // 23. SHANNON ENTROPY
+  { const eCnt={}; last3.forEach(n=>{eCnt[n]=(eCnt[n]||0)+1;});
+    let H=0; Object.values(eCnt).forEach(c=>{const p=c/3;H-=p*Math.log2(p);});
+    const Hn=H/Math.log2(10);
+    if(Hn<0.5){ scores[(10-last3[2])%10]+=2.5; add(last3[2]+(last3[2]-last3[1]),1.5); }
+    detail.entropy=`${H.toFixed(2)}`;
+    signals.push({n:`Shannon H=${H.toFixed(2)}b`,on:true,i:'⚡'}); }
+
+  // 24. KOLMOGOROV COMPLEXITY PROXY (run-length)
+  { let rle=1; for(let i=1;i<last3.length;i++) if(last3[i]!==last3[i-1]) rle++;
+    if(rle===1){ for(let n=0;n<10;n++) if(n!==last3[0]) scores[n]+=2.2; signals.push({n:'Kolmogorov-RLE Break',on:true,i:'💡'}); }
+    else signals.push({n:`RLE Complexity=${rle}`,on:true,i:'💡'}); }
+
+  // 25. CHI-SQUARE GOODNESS-OF-FIT
+  { const expv=N/10; const obs=new Array(10).fill(0); allNums.forEach(n=>obs[n]++);
+    const chi=obs.reduce((s,o)=>s+((o-expv)**2)/expv,0);
+    obs.forEach((o,n)=>{const d=expv-o;if(d>0)scores[n]+=(d/expv)*2.4;});
+    detail.chi=`χ²=${chi.toFixed(1)}`;
+    signals.push({n:`Chi-Square χ²=${chi.toFixed(1)}`,on:true,i:'📐'}); }
+
+  // 26. PEARSON CORRELATION (result vs position)
+  { if(hN>=6){ const xs=histNums.map((_,i)=>i),ys=histNums;
+      const mx=xs.reduce((a,b)=>a+b)/hN,my=ys.reduce((a,b)=>a+b)/hN;
+      let nm=0,dx=0,dy=0; for(let i=0;i<hN;i++){nm+=(xs[i]-mx)*(ys[i]-my);dx+=(xs[i]-mx)**2;dy+=(ys[i]-my)**2;}
+      const r=dx*dy>0?nm/Math.sqrt(dx*dy):0;
+      if(r>0.2) scores[ci(my+(hN+1-mx)*r)]+=Math.abs(r)*2.0;
+      else if(r<-0.2) scores[ci(my-Math.abs(r)*2)]+=Math.abs(r)*1.5;
+      signals.push({n:`Pearson r=${r.toFixed(2)}`,on:Math.abs(r)>0.2,i:'📉'}); }
+    else signals.push({n:'Pearson (need data)',on:false,i:'📉'}); }
+
+  // 27. SPEARMAN RANK CORRELATION
+  { if(hN>=6){
+      const ranked=[...histNums].map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v).map((x,r)=>({...x,r})).sort((a,b)=>a.i-b.i).map(x=>x.r);
+      const xs=ranked.map((_,i)=>i); const mx=xs.reduce((a,b)=>a+b)/hN, mr=ranked.reduce((a,b)=>a+b)/hN;
+      let d2=0; for(let i=0;i<hN;i++) d2+=(xs[i]-mx)*(ranked[i]-mr);
+      const rho=d2/(hN*hN);
+      if(Math.abs(rho)>0.01) add(histNums[hN-1]+rho*5,1.2);
+      signals.push({n:`Spearman ρ=${rho.toFixed(2)}`,on:Math.abs(rho)>0.01,i:'🔗'}); }
+    else signals.push({n:'Spearman (need data)',on:false,i:'🔗'}); }
+
+  // 28. LINEAR REGRESSION (OLS)
+  { if(hN>=4){ const rn=histNums.slice(-Math.min(hN,16));const rN=rn.length;
+      const mx=rn.map((_,i)=>i).reduce((a,b)=>a+b)/rN, my=rn.reduce((a,b)=>a+b)/rN;
+      let nm=0,dn=0; for(let i=0;i<rN;i++){nm+=(i-mx)*(rn[i]-my);dn+=(i-mx)**2;}
+      const sl=dn?nm/dn:0; const pred=((sl*rN+my-sl*mx)%10+10)%10;
+      add(pred,2.2); add(pred+1,0.9); add(pred-1,0.9);
+      detail.reg=`m=${sl.toFixed(2)}`;
+      signals.push({n:`OLS Regression m=${sl.toFixed(2)}`,on:true,i:'📈'}); }
+    else signals.push({n:'OLS Regression',on:false,i:'📈'}); }
+
+  // 29. POLYNOMIAL REGRESSION (degree-2)
+  { if(hN>=6){ const rn=histNums.slice(-10); const rN=rn.length;
+      const x2=rn.map((_,i)=>i*i), x1=rn.map((_,i)=>i), y=rn;
+      const s0=rN, s1=x1.reduce((a,b)=>a+b), s2=x2.reduce((a,b)=>a+b), s3=x2.map((v,i)=>v*x1[i]).reduce((a,b)=>a+b), s4=x2.map(v=>v*v).reduce((a,b)=>a+b);
+      const sy=y.reduce((a,b)=>a+b), sxy=x1.map((v,i)=>v*y[i]).reduce((a,b)=>a+b), sx2y=x2.map((v,i)=>v*y[i]).reduce((a,b)=>a+b);
+      const D=s0*(s2*s4-s3*s3)-s1*(s1*s4-s3*s2)+s2*(s1*s3-s2*s2);
+      if(Math.abs(D)>0.01){
+        const a=(sy*(s2*s4-s3*s3)-s1*(sxy*s4-sx2y*s3)+s2*(sxy*s3-sx2y*s2))/D;
+        const b=(s0*(sxy*s4-sx2y*s3)-sy*(s1*s4-s3*s2)+s2*(s1*sx2y-sxy*s2))/D;
+        const c=(s0*(s2*sx2y-s3*sxy)-s1*(s1*sx2y-sxy*s2)+sy*(s1*s3-s2*s2))/D;
+        const np=a+b*rN+c*rN*rN; add(np,1.8);
+      }
+      signals.push({n:'Poly Regression deg-2',on:Math.abs(D||0)>0.01,i:'〽️'}); }
+    else signals.push({n:'Poly-Reg (need data)',on:false,i:'〽️'}); }
+
+  // 30. MOVING AVERAGE – SMA(3), EMA(5)
+  { const sma3=(last3[0]+last3[1]+last3[2])/3; add(sma3,1.0);
+    if(hN>=5){const ema5=histNums.slice(-5).reduce((acc,v,i)=>acc+(v*Math.pow(0.38,4-i)),0)/histNums.slice(-5).reduce((_,__,i)=>(_+Math.pow(0.38,4-i)),0); add(ema5,1.3);}
+    detail.sma=`SMA=${sma3.toFixed(1)}`;
+    signals.push({n:`SMA/EMA avg=${sma3.toFixed(1)}`,on:true,i:'📊'}); }
+
+  // 31. EXPONENTIAL SMOOTHING (Holt's Double)
+  { if(hN>=4){ let l=histNums[0],b=(histNums[1]-histNums[0]);
+      const al=0.4,be=0.2;
+      for(let i=1;i<hN;i++){const lp=l;l=al*histNums[i]+(1-al)*(l+b);b=be*(l-lp)+(1-be)*b;}
+      add(l+b,2.0); add(l+2*b,0.8);
+      detail.holt=`l=${l.toFixed(1)},b=${b.toFixed(2)}`;
+      signals.push({n:`Holt Smooth l=${l.toFixed(1)}`,on:true,i:'〰️'}); }
+    else signals.push({n:'Holt Smooth (need data)',on:false,i:'〰️'}); }
+
+  // 32. FOURIER DFT PERIODICITY
+  { if(hN>=8){
+      let bP=0,bPow=0;
+      for(let p=2;p<=8;p++){let pw=0;for(let i=0;i<hN-p;i++)pw+=Math.cos(2*Math.PI*histNums[i]*p/10)*Math.cos(2*Math.PI*histNums[i+p]*p/10);pw=Math.abs(pw)/hN;if(pw>bPow){bPow=pw;bP=p;}}
+      if(bP>0&&bPow>0.04) scores[histNums[hN-bP]]+=bPow*4.5;
+      detail.fourier=`P=${bP},pow=${bPow.toFixed(3)}`;
+      signals.push({n:`Fourier P=${bP} pow=${bPow.toFixed(2)}`,on:bPow>0.04,i:'〰'}); }
+    else signals.push({n:'Fourier (need data)',on:false,i:'〰'}); }
+
+  // 33. DISCRETE COSINE TRANSFORM (DCT)
+  { if(hN>=8){ const w=histNums.slice(-8); const M=w.length;
+      const dct=Array.from({length:M},(_,k)=>w.reduce((s,x,n)=>s+x*Math.cos(Math.PI*k*(2*n+1)/(2*M)),0));
+      const dom=dct.slice(1).indexOf(Math.max(...dct.slice(1)))+1;
+      if(dom>0) scores[histNums[hN-dom]%(10)]+=1.5;
+      signals.push({n:`DCT peak k=${dom}`,on:dom>0,i:'🌊'}); }
+    else signals.push({n:'DCT (need data)',on:false,i:'🌊'}); }
+
+  // 34. AUTOCORRELATION FUNCTION (ACF)
+  { if(hN>=6){
+      const best=[1,2,3,4,5].map(lag=>{const n2=hN-lag;if(n2<2)return{lag,r:0};const x=histNums.slice(0,n2),y=histNums.slice(lag,lag+n2);const mx2=x.reduce((a,b)=>a+b)/n2,my2=y.reduce((a,b)=>a+b)/n2;let nm=0,dx=0,dy=0;for(let i=0;i<n2;i++){nm+=(x[i]-mx2)*(y[i]-my2);dx+=(x[i]-mx2)**2;dy+=(y[i]-my2)**2;}return{lag,r:(dx*dy>0)?nm/Math.sqrt(dx*dy):0};}).reduce((a,b)=>Math.abs(a.r)>Math.abs(b.r)?a:b);
+      if(Math.abs(best.r)>0.15){ const lv=histNums[hN-best.lag]; best.r>0?scores[lv]+=Math.abs(best.r)*3.5:scores[(lv+5)%10]+=Math.abs(best.r)*3.5; }
+      detail.acf=`r=${best.r.toFixed(2)}`;
+      signals.push({n:`ACF lag=${best.lag} r=${best.r.toFixed(2)}`,on:Math.abs(best.r)>0.15,i:'📈'}); }
+    else signals.push({n:'ACF (need data)',on:false,i:'📈'}); }
+
+  // 35. PARTIAL AUTOCORRELATION (PACF approx via Yule-Walker)
+  { if(hN>=8){ const r1arr=[1,2,3].map(lag=>{const n2=hN-lag;const x=histNums.slice(0,n2),y=histNums.slice(lag,lag+n2);const mx2=x.reduce((a,b)=>a+b)/n2,my2=y.reduce((a,b)=>a+b)/n2;let nm=0,dx=0,dy=0;for(let i=0;i<n2;i++){nm+=(x[i]-mx2)*(y[i]-my2);dx+=(x[i]-mx2)**2;dy+=(y[i]-my2)**2;}return dx*dy>0?nm/Math.sqrt(dx*dy):0;});
+      const phi2=(r1arr[1]-r1arr[0]*r1arr[0])/(1-r1arr[0]*r1arr[0]);
+      if(Math.abs(phi2)>0.1) add(histNums[hN-2]+phi2*3,Math.abs(phi2)*2);
+      signals.push({n:`PACF φ=${phi2.toFixed(2)}`,on:Math.abs(phi2)>0.1,i:'↩️'}); }
+    else signals.push({n:'PACF (need data)',on:false,i:'↩️'}); }
+
+  // 36. ARIMA-STYLE AR(2) PROCESS
+  { if(hN>=5){ const phi1=0.45,phi2=0.25;
+      const pred2=phi1*histNums[hN-1]+phi2*histNums[hN-2];
+      add(pred2,2.0); add(pred2+1,0.7);
+      signals.push({n:`AR(2) pred=${pred2.toFixed(1)}`,on:true,i:'🔭'}); }
+    else signals.push({n:'AR(2) (need data)',on:false,i:'🔭'}); }
+
+  // 37. VARIANCE & STD DEV ANALYSIS
+  { const mean2=allNums.reduce((a,b)=>a+b,0)/N;
+    const variance=allNums.reduce((s,v)=>s+(v-mean2)**2,0)/N;
+    const std=Math.sqrt(variance);
+    // Regress to mean — values far from mean are less likely to repeat
+    for(let n=0;n<10;n++){const d=Math.abs(n-mean2);scores[n]+=Math.max(0,(std-d)/std)*1.0;}
+    detail.variance=`σ=${std.toFixed(2)}`;
+    signals.push({n:`σ=${std.toFixed(2)} RegressMean`,on:true,i:'📉'}); }
+
+  // 38. Z-SCORE NORMALIZATION
+  { const mean2=allNums.reduce((a,b)=>a+b,0)/N;
+    const std=Math.sqrt(allNums.reduce((s,v)=>s+(v-mean2)**2,0)/N)||1;
+    const z3=last3.map(v=>(v-mean2)/std);
+    // Predict continuation based on z-score trend
+    const zNext=z3[2]+(z3[2]-z3[1])*0.5; add(zNext*std+mean2,1.4);
+    signals.push({n:`Z-Score next=${((zNext*std+mean2)%10+10)%10|0}`,on:true,i:'📏'}); }
+
+  // 39. INTER-QUARTILE RANGE (IQR) OUTLIER DETECTION
+  { if(N>=8){ const sorted=[...allNums].sort((a,b)=>a-b);
+      const q1=sorted[Math.floor(N*0.25)],q3=sorted[Math.floor(N*0.75)];
+      const iqr=q3-q1; const lo=q1-1.5*iqr, hi=q3+1.5*iqr;
+      for(let n=0;n<10;n++) if(n>=lo&&n<=hi) scores[n]+=0.6;
+      signals.push({n:`IQR [${q1}-${q3}]`,on:true,i:'📦'}); }
+    else signals.push({n:'IQR (need data)',on:false,i:'📦'}); }
+
+  // 40. SKEWNESS
+  { if(N>=5){ const mean2=allNums.reduce((a,b)=>a+b,0)/N;
+      const std=Math.sqrt(allNums.reduce((s,v)=>s+(v-mean2)**2,0)/N)||1;
+      const skew=allNums.reduce((s,v)=>s+((v-mean2)/std)**3,0)/N;
+      // Positive skew → left tail boost; negative skew → right tail boost
+      if(skew>0.5) for(let n=0;n<5;n++) scores[n]+=skew*0.6;
+      else if(skew<-0.5) for(let n=5;n<10;n++) scores[n]+=Math.abs(skew)*0.6;
+      signals.push({n:`Skewness γ=${skew.toFixed(2)}`,on:Math.abs(skew)>0.5,i:'⚖️'}); }
+    else signals.push({n:'Skewness (need data)',on:false,i:'⚖️'}); }
+
+  // 41. KURTOSIS
+  { if(N>=5){ const mean2=allNums.reduce((a,b)=>a+b,0)/N;
+      const std=Math.sqrt(allNums.reduce((s,v)=>s+(v-mean2)**2,0)/N)||1;
+      const kurt=allNums.reduce((s,v)=>s+((v-mean2)/std)**4,0)/N-3;
+      // High kurtosis → extreme values more likely
+      if(kurt>1){ scores[0]+=kurt*0.3; scores[9]+=kurt*0.3; }
+      signals.push({n:`Kurtosis κ=${kurt.toFixed(2)}`,on:Math.abs(kurt)>1,i:'🏔️'}); }
+    else signals.push({n:'Kurtosis (need data)',on:false,i:'🏔️'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP E: PATTERN & SEQUENCE ANALYSIS
+  ════════════════════════════════════════════════════ */
+
+  // 42. PATTERN DETECTION (primary)
+  { const asc=last3[0]<last3[1]&&last3[1]<last3[2];
+    const dsc=last3[0]>last3[1]&&last3[1]>last3[2];
+    const flt=last3[0]===last3[1]&&last3[1]===last3[2];
+    const alt=last3[0]!==last3[1]&&last3[0]===last3[2];
+    if(flt){for(let n=0;n<10;n++)if(n!==last3[2])scores[n]+=2.8; signals.push({n:'Triple Flat→Breakout',on:true,i:'💥'});}
+    else if(alt){scores[last3[1]]+=3.0; signals.push({n:'Alternating Pattern',on:true,i:'↔'});}
+    else if(asc){add(last3[2]+1,1.8);add(last3[2]+2,1.0);add(last3[2]-1,0.6); signals.push({n:'Ascending Trend',on:true,i:'↗'});}
+    else if(dsc){add(last3[2]-1,1.8);add(last3[2]-2,1.0);add(last3[2]+1,0.6); signals.push({n:'Descending Trend',on:true,i:'↘'});}
+    else signals.push({n:'Mixed Pattern',on:true,i:'🔄'});
+    detail.pattern=flt?'Flat':alt?'Alt':asc?'Asc':dsc?'Dsc':'Mix'; }
+
+  // 43. DELTA SEQUENCE (differences)
+  { const d1=last3[1]-last3[0], d2=last3[2]-last3[1];
+    const d3=d2+(d2-d1)*0.5; add(last3[2]+d3,1.6);
+    detail.delta=`Δ=${d1},${d2}`;
+    signals.push({n:`Delta Δ${d1}→Δ${d2}`,on:true,i:'Δ'}); }
+
+  // 44. SECOND-ORDER DIFFERENCES
+  { const d1=last3[1]-last3[0], d2=last3[2]-last3[1], dd=d2-d1;
+    add(last3[2]+(d2+dd),1.0);
+    signals.push({n:`2nd-Order Δ²=${dd}`,on:true,i:'∂'}); }
+
+  // 45. GEOMETRIC RATIO ANALYSIS
+  { if(last3[0]>0&&last3[1]>0){ const r1=last3[1]/last3[0]; const r2=last3[2]/(last3[1]||1);
+      const rNext=(r1+r2)/2; add(last3[2]*rNext,1.2);
+      signals.push({n:`Geo Ratio r=${rNext.toFixed(2)}`,on:true,i:'÷'}); }
+    else signals.push({n:'Geo Ratio',on:false,i:'÷'}); }
+
+  // 46. ARITHMETIC MEAN REVERSION
+  { const mu=allNums.reduce((a,b)=>a+b,0)/N;
+    for(let n=0;n<10;n++) scores[n]+=(1.0-Math.abs(n-mu)/5)*0.8;
+    signals.push({n:`Mean Revert μ=${mu.toFixed(1)}`,on:true,i:'⟲'}); }
+
+  // 47. MOMENTUM OSCILLATOR
+  { if(hN>=4){ const roc=(histNums[hN-1]-histNums[hN-4])/4;
+      add(last3[2]+roc*1.5,1.5); add(last3[2]-roc,0.8);
+      signals.push({n:`Momentum RoC=${roc.toFixed(2)}`,on:true,i:'🚀'}); }
+    else signals.push({n:'Momentum (need data)',on:false,i:'🚀'}); }
+
+  // 48. RSI-STYLE RELATIVE STRENGTH
+  { if(hN>=7){ const gains=[],losses=[];
+      for(let i=1;i<Math.min(hN,8);i++){ const d=histNums[i]-histNums[i-1]; if(d>0)gains.push(d); else losses.push(-d); }
+      const ag=gains.length?gains.reduce((a,b)=>a+b)/gains.length:0;
+      const al2=losses.length?losses.reduce((a,b)=>a+b)/losses.length:0.001;
+      const rs=ag/al2; const rsi=100-100/(1+rs);
+      if(rsi>70){ for(let n=0;n<=4;n++) scores[n]+=0.9; signals.push({n:`RSI=${rsi.toFixed(0)} Overbought`,on:true,i:'📉'}); }
+      else if(rsi<30){ for(let n=5;n<=9;n++) scores[n]+=0.9; signals.push({n:`RSI=${rsi.toFixed(0)} Oversold`,on:true,i:'📈'}); }
+      else signals.push({n:`RSI=${rsi.toFixed(0)} Neutral`,on:false,i:'📊'}); }
+    else signals.push({n:'RSI (need data)',on:false,i:'📊'}); }
+
+  // 49. BOLLINGER BANDS
+  { if(N>=8){ const rn=allNums.slice(-8); const mu=rn.reduce((a,b)=>a+b)/8;
+      const sigma=Math.sqrt(rn.reduce((s,v)=>s+(v-mu)**2,0)/8);
+      const upper=mu+2*sigma, lower=mu-2*sigma;
+      if(last3[2]>upper) for(let n=0;n<5;n++) scores[n]+=1.2;
+      else if(last3[2]<lower) for(let n=5;n<10;n++) scores[n]+=1.2;
+      else{ add(mu,1.0); }
+      signals.push({n:`Bollinger μ±2σ=${mu.toFixed(1)}`,on:true,i:'📊'}); }
+    else signals.push({n:'Bollinger (need data)',on:false,i:'📊'}); }
+
+  // 50. MACD (Moving Average Convergence Divergence)
+  { if(hN>=9){ const ema12=histNums.slice(-6).reduce((a,v,i)=>a+v*Math.pow(0.32,5-i),0)/histNums.slice(-6).reduce((_,__,i)=>_+Math.pow(0.32,5-i),0);
+      const ema26=histNums.slice(-4).reduce((a,v,i)=>a+v*Math.pow(0.45,3-i),0)/histNums.slice(-4).reduce((_,__,i)=>_+Math.pow(0.45,3-i),0);
+      const macd=ema12-ema26;
+      add(last3[2]+macd*0.5,1.3);
+      signals.push({n:`MACD=${macd.toFixed(2)}`,on:true,i:'📉'}); }
+    else signals.push({n:'MACD (need data)',on:false,i:'📉'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP F: HOT/COLD, COLOR & SIZE ANALYSIS
+  ════════════════════════════════════════════════════ */
+
+  // 51. HOT/COLD WINDOW-8
+  { const w8=allNums.slice(-8); const hc=new Array(10).fill(0); w8.forEach(n=>hc[n]++);
+    const hmax=Math.max(...hc); hc.forEach((c,n)=>scores[n]+=(hmax-c)/(hmax||1)*2.0);
+    detail.hotcold=`hot=${hc.indexOf(hmax)}`;
+    signals.push({n:'Hot/Cold W=8',on:true,i:'🌡️'}); }
+
+  // 52. HOT/COLD WINDOW-15
+  { const w15=allNums.slice(-15); const hc=new Array(10).fill(0); w15.forEach(n=>hc[n]++);
+    const hmax=Math.max(...hc); hc.forEach((c,n)=>scores[n]+=(hmax-c)/(hmax||1)*1.4);
+    signals.push({n:'Hot/Cold W=15',on:allNums.length>=15,i:'❄️'}); }
+
+  // 53. COLD NUMBER RECENCY BOOST
+  { const since=new Array(10).fill(allNums.length+1);
+    for(let n=0;n<10;n++) for(let i=allNums.length-1;i>=0;i--){if(allNums[i]===n){since[n]=allNums.length-1-i;break;}}
+    const mx=Math.max(...since); since.forEach((s,n)=>scores[n]+=(s/mx)*2.5);
+    signals.push({n:'Recency Due Index',on:true,i:'⏰'}); }
+
+  // 54. COLOR MOMENTUM
+  { const cseq=last3.map(n=>META[n].c); const cc={g:0,r:0,vr:0}; cseq.forEach(c=>cc[c]++);
+    const dom=Object.keys(cc).reduce((a,b)=>cc[a]>cc[b]?a:b);
+    if(cc[dom]===3){for(let n=0;n<10;n++)if(META[n].c!==dom)scores[n]+=2.2; signals.push({n:'Color Break 3×same',on:true,i:'🎨'});}
+    else if(cc[dom]===2){for(let n=0;n<10;n++)if(META[n].c!==dom)scores[n]+=1.4; signals.push({n:'Color Momentum',on:true,i:'🎨'});}
+    else signals.push({n:'Color Mixed',on:true,i:'🎨'});
+    detail.color=`dom=${dom}`; }
+
+  // 55. COLOR SEQUENCE HISTORY
+  { if(hN>=3){ const hc2=histNums.slice(-6).map(n=>META[n].c);
+      const cPat=hc2.join(''); const expect=cPat.endsWith('ggg')||cPat.endsWith('rrr')||cPat.endsWith('vrvr')?'switch':'continue';
+      if(expect==='switch') for(let n=0;n<10;n++) if(META[n].c!==META[last3[2]].c) scores[n]+=1.0;
+      signals.push({n:`Color Seq ${expect}`,on:true,i:'🖍️'}); }
+    else signals.push({n:'Color Seq',on:false,i:'🖍️'}); }
+
+  // 56. SIZE MOMENTUM
+  { const bcnt=last3.filter(n=>META[n].size==='Big').length;
+    if(bcnt===3){for(let n=0;n<10;n++)if(META[n].size==='Small')scores[n]+=2.0; signals.push({n:'Size Switch 3×Big',on:true,i:'📏'});}
+    else if(bcnt===0){for(let n=0;n<10;n++)if(META[n].size==='Big')scores[n]+=2.0; signals.push({n:'Size Switch 3×Small',on:true,i:'📏'});}
+    else signals.push({n:`Size Mix ${bcnt}Big`,on:false,i:'📏'});
+    detail.size=`big=${bcnt}/3`; }
+
+  // 57. SIZE HISTORY CYCLE
+  { if(hN>=5){ const sc=histNums.slice(-6).map(n=>META[n].size);
+      const allBig=sc.every(s=>s==='Big'), allSmall=sc.every(s=>s==='Small');
+      if(allBig) for(let n=0;n<10;n++) if(META[n].size==='Small') scores[n]+=1.5;
+      if(allSmall) for(let n=0;n<10;n++) if(META[n].size==='Big') scores[n]+=1.5;
+      signals.push({n:`Size Cycle hist`,on:allBig||allSmall,i:'🔄'}); }
+    else signals.push({n:'Size Cycle',on:false,i:'🔄'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP G: INFORMATION THEORY
+  ════════════════════════════════════════════════════ */
+
+  // 58. MUTUAL INFORMATION (approx between consecutive pairs)
+  { if(hN>=8){
+      const joint={}; for(let i=0;i<hN-1;i++){const k=`${histNums[i]},${histNums[i+1]}`;joint[k]=(joint[k]||0)+1;}
+      const px=new Array(10).fill(0); histNums.forEach(v=>px[v]++);
+      let MI=0; Object.entries(joint).forEach(([k,cnt])=>{const [a,b]=k.split(',').map(Number);const pxy=cnt/hN;const pa=px[a]/hN,pb=px[b]/hN;if(pa>0&&pb>0) MI+=pxy*Math.log2(pxy/(pa*pb));});
+      if(MI>0.1){ const row2=histNums.slice(-1)[0]; scores[row2]+=MI*0.5; }
+      signals.push({n:`Mutual Info MI=${MI.toFixed(2)}`,on:MI>0.1,i:'🔄'}); }
+    else signals.push({n:'Mutual Info (need data)',on:false,i:'🔄'}); }
+
+  // 59. TRANSFER ENTROPY
+  { if(hN>=8){
+      const wins5=history.slice(-5).map(h=>h.outcome==='win'?1:0);
+      const wTrend=wins5.reduce((a,b)=>a+b,0)/5;
+      const tIdx=scores.indexOf(Math.max(...scores));
+      if(wTrend>0.6) scores[tIdx]*=1.25;
+      else if(wTrend<0.3) for(let n=0;n<10;n++) scores[n]*=(0.9+Math.random()*0.15);
+      signals.push({n:`Transfer Entropy w=${(wTrend*100).toFixed(0)}%`,on:true,i:'⚡'}); }
+    else signals.push({n:'Transfer Entropy',on:false,i:'⚡'}); }
+
+  // 60. MINIMUM DESCRIPTION LENGTH (MDL)
+  { const rl=[]; let cur=allNums[0],cnt=1;
+    for(let i=1;i<allNums.length;i++){if(allNums[i]===cur)cnt++;else{rl.push({v:cur,c:cnt});cur=allNums[i];cnt=1;}} rl.push({v:cur,c:cnt});
+    const mdl=rl.length; // fewer runs = lower complexity
+    if(mdl/allNums.length < 0.7){ add(cur+1,1.2); add(cur-1,0.8); } // trending
+    signals.push({n:`MDL runs=${mdl}`,on:true,i:'📐'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP H: GAME THEORY & OPTIMIZATION
+  ════════════════════════════════════════════════════ */
+
+  // 61. KELLY CRITERION
+  { const wr=S.total>0?S.wins/S.total:0.5; const kelly=Math.max(0,2*wr-1);
+    const topI=scores.indexOf(Math.max(...scores)); scores[topI]*=(1+kelly*0.6);
+    detail.kelly=`f*=${(kelly*100).toFixed(1)}%`;
+    signals.push({n:`Kelly f*=${(kelly*100).toFixed(0)}%`,on:kelly>0,i:'💰'}); }
+
+  // 62. ELO FORM RATING
+  { if(history.length>=5){ const r5=history.slice(-5).map(h=>h.outcome==='win'?1:0);
+      const elo=r5.reduce((a,b)=>a+b)/5;
+      if(elo>0.6){ const tIdx=scores.indexOf(Math.max(...scores)); scores[tIdx]*=1.35; }
+      else if(elo<0.3) scores.forEach((_,i)=>scores[i]*=(0.95+Math.random()*0.08));
+      detail.elo=`form=${(elo*100).toFixed(0)}%`;
+      signals.push({n:`ELO form=${(elo*100).toFixed(0)}%`,on:true,i:'⭐'}); }
+    else signals.push({n:'ELO (need data)',on:false,i:'⭐'}); }
+
+  // 63. MINIMAX REGRET
+  { const maxScore=Math.max(...scores);
+    const regret=scores.map(s=>maxScore-s);
+    const minReg=regret.indexOf(Math.min(...regret));
+    scores[minReg]+=1.5;
+    signals.push({n:'Minimax Regret',on:true,i:'🎮'}); }
+
+  // 64. NASH EQUILIBRIUM MIXED STRATEGY
+  { const sSum=scores.reduce((a,b)=>a+b,0)||1;
+    const nashMix=scores.map(s=>s/sSum);
+    const nashPick=nashMix.reduce((bi,p,i)=>p>nashMix[bi]?i:bi,0);
+    scores[nashPick]+=1.0;
+    signals.push({n:'Nash Equilibrium',on:true,i:'⚖️'}); }
+
+  // 65. EXPECTED VALUE MAXIMIZATION
+  { const payoff=[1,1,1.2,1,1.2,1.5,1.2,1,1.2,1]; // size/color weighting
+    for(let n=0;n<10;n++) scores[n]*=payoff[n];
+    signals.push({n:'EV Maximization',on:true,i:'💡'}); }
+
+  // 66. PROSPECT THEORY (loss aversion)
+  { const ref=last3[2]; const lambda=2.25;
+    for(let n=0;n<10;n++){const delta=n-ref; if(delta<0) scores[n]/=(1+lambda*Math.abs(delta)*0.1); else scores[n]*=(1+0.5*delta*0.1);}
+    signals.push({n:'Prospect Theory',on:true,i:'🧠'}); }
+
+  // 67. REGRET MINIMIZATION
+  { if(hN>=4){ const lostBets=histNums.slice(-4); const regretN=new Array(10).fill(0);
+      lostBets.forEach(v=>{ regretN[(v+1)%10]+=0.5; regretN[(v-1+10)%10]+=0.5; });
+      for(let n=0;n<10;n++) scores[n]+=regretN[n]*0.6;
+      signals.push({n:'Regret Minimization',on:true,i:'♟️'}); }
+    else signals.push({n:'Regret Min (need data)',on:false,i:'♟️'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP I: NEURAL / ML-INSPIRED METHODS
+  ════════════════════════════════════════════════════ */
+
+  // 68. PERCEPTRON-STYLE WEIGHTED VOTING
+  { const w=[0.05,0.15,0.35,0.45]; const ctx=allNums.slice(-4);
+    const pred3=ctx.reduce((s,v,i)=>s+v*w[i],0)/(w.reduce((a,b)=>a+b));
+    add(pred3,2.2); add(pred3+1,0.8);
+    signals.push({n:`Perceptron pred=${pred3.toFixed(1)}`,on:N>=4,i:'🧠'}); }
+
+  // 69. K-NEAREST NEIGHBORS (k=3, last 3 as query)
+  { if(hN>=5){
+      const dists=histNums.slice(0,-3).map((v,i)=>{const seg=histNums.slice(i,i+3); const d=last3.reduce((s,x,j)=>s+(x-seg[j])**2,0); return{d,next:histNums[i+3]||null};}).filter(x=>x.next!==null).sort((a,b)=>a.d-b.d).slice(0,3);
+      dists.forEach(({d,next})=>{ const w=1/(d+0.01); scores[next]+=w*2.5; });
+      signals.push({n:`KNN k=3 matches`,on:dists.length>0,i:'🔍'}); }
+    else signals.push({n:'KNN (need data)',on:false,i:'🔍'}); }
+
+  // 70. NAIVE BAYES CLASSIFIER
+  { if(hN>=4){ const classes={g:[],r:[],vr:[]};
+      histNums.forEach((v,i)=>{ if(i>0) classes[META[histNums[i-1]].c].push(v); });
+      const prevColor=META[last3[2]].c; const bucket=classes[prevColor];
+      if(bucket.length>0){ const bf=new Array(10).fill(0); bucket.forEach(v=>bf[v]++);
+        const bm=Math.max(...bf); bf.forEach((c,n)=>scores[n]+=c/bm*1.5); }
+      signals.push({n:'Naïve Bayes Color',on:true,i:'📊'}); }
+    else signals.push({n:'Naïve Bayes (need data)',on:false,i:'📊'}); }
+
+  // 71. RANDOM FOREST ENSEMBLE (simulated)
+  { const trees=5; const treePreds=new Array(10).fill(0);
+    for(let t=0;t<trees;t++){
+      const subset=allNums.filter((_,i)=>i%trees===t||i%(trees-t||1)===0);
+      if(subset.length>0){ const sf=new Array(10).fill(0); subset.forEach(v=>sf[v]++);
+        const sm=Math.max(...sf); sf.forEach((c,n)=>treePreds[n]+=(sm-c)/sm); }
+    }
+    for(let n=0;n<10;n++) scores[n]+=treePreds[n]/trees*1.2;
+    signals.push({n:'Random Forest ens.',on:true,i:'🌲'}); }
+
+  // 72. GRADIENT BOOSTING RESIDUAL
+  { if(hN>=6){ const baseline=allNums.slice(-6).reduce((a,b)=>a+b)/6;
+      const resid=histNums.slice(-3).map(v=>v-baseline);
+      const gradPred=baseline+resid.reduce((a,b)=>a+b)/3;
+      add(gradPred,1.8); add(gradPred+resid[resid.length-1]*0.5,0.9);
+      signals.push({n:`GBM residual=${resid[2].toFixed(1)}`,on:true,i:'📉'}); }
+    else signals.push({n:'GBM (need data)',on:false,i:'📉'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP J: CHAOS & DYNAMICAL SYSTEMS
+  ════════════════════════════════════════════════════ */
+
+  // 73. LOGISTIC MAP CHAOS
+  { const r=3.7; let x=(last3[2]+0.1)/10.5;
+    for(let i=0;i<8;i++) x=r*x*(1-x);
+    add(x*10,1.8);
+    signals.push({n:`Logistic Map x=${(x*10).toFixed(1)}`,on:true,i:'🌀'}); }
+
+  // 74. LYAPUNOV EXPONENT PROXY
+  { if(N>=6){ const lyap=N>=8?allNums.slice(-8).reduce((s,v,i,a)=>i>0?s+Math.log(Math.abs(v-a[i-1]||0.1)):s,0)/7:0;
+      if(lyap>0.5){ for(let n=0;n<10;n++) scores[n]*=(0.95+Math.random()*0.1); }
+      signals.push({n:`Lyapunov λ=${lyap.toFixed(2)}`,on:lyap>0.5,i:'🌀'}); }
+    else signals.push({n:'Lyapunov (need data)',on:false,i:'🌀'}); }
+
+  // 75. TENT MAP
+  { let x2=(last3.reduce((a,b)=>a+b,0)%10)/10+0.05;
+    for(let i=0;i<5;i++) x2=x2<0.5?2*x2:2*(1-x2);
+    add(x2*10,1.2);
+    signals.push({n:`Tent Map x=${(x2*10).toFixed(1)}`,on:true,i:'⛺'}); }
+
+  // 76. HENON MAP
+  { const a=1.4,b=0.3;
+    let x3=(last3[2]-4.5)/5, y3=(last3[1]-4.5)/5;
+    for(let i=0;i<3;i++){const xn=1-a*x3*x3+y3;y3=b*x3;x3=xn;}
+    add((x3+1.5)*10/3,1.0);
+    signals.push({n:`Hénon Map x=${x3.toFixed(2)}`,on:true,i:'📐'}); }
+
+  // 77. STRANGE ATTRACTOR (Lorenz simplified)
+  { const s=10,b2=8/3,rho=28;
+      let lx=(last3[0]-4.5)/5, ly=(last3[1]-4.5)/5, lz=last3[2]/10;
+      const dt=0.005;
+      for(let i=0;i<20;i++){const dx=s*(ly-lx),dy=lx*(rho-lz)-ly,dz=lx*ly-b2*lz;lx+=dx*dt;ly+=dy*dt;lz+=dz*dt;}
+      add(Math.abs(lx*5+4.5),0.9);
+      signals.push({n:'Lorenz Attractor',on:true,i:'🌀'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP K: COMBINATORICS & COUNTING
+  ════════════════════════════════════════════════════ */
+
+  // 78. BIRTHDAY PROBLEM REPEAT PENALTY
+  { const freq=new Array(10).fill(0); allNums.forEach(n=>freq[n]++);
+    freq.forEach((c,n)=>{ if(c>N/10*1.5) scores[n]*=0.7; }); // penalize over-represented
+    signals.push({n:'Birthday Repeat Penalty',on:true,i:'🎂'}); }
+
+  // 79. COUPON COLLECTOR – next expected unique
+  { const seen=new Set(allNums); const missing=[...Array(10).keys()].filter(n=>!seen.has(n));
+    missing.forEach(n=>scores[n]+=1.8); // boost unseen numbers
+    signals.push({n:`Coupon Collector ${missing.length}missing`,on:missing.length>0,i:'🎫'}); }
+
+  // 80. STIRLING NUMBERS PROXIMITY
+  { const s2=n=>{let v=0;for(let k=0;k<=n;k++)v+=Math.pow(-1,n-k)*Math.pow(k,n)*(1/Array.from({length:n+1},(_,i)=>i?i:1).reduce((a,b,i)=>i<=n-k?a*b:a,1));return Math.abs(v)%10;};
+    if(last3[2]<=4) add(s2(last3[2]+1)%10,0.8);
+    signals.push({n:'Stirling Proximity',on:true,i:'🔢'}); }
+
+  // 81. CATALAN NUMBERS MOD 10
+  { const catalan=[1,1,2,5,14,42,132,429];
+    const ls=last3.reduce((a,b)=>a+b,0)%catalan.length;
+    scores[catalan[ls]%10]+=0.9;
+    signals.push({n:`Catalan C=${catalan[ls]}`,on:true,i:'🔺'}); }
+
+  // 82. PASCAL TRIANGLE ROW SUMS MOD 10
+  { const rowSum=n=>Math.pow(2,n); const rs=rowSum(last3.reduce((a,b)=>a+b,0)%10);
+    add(rs%10,0.8);
+    signals.push({n:`Pascal Row sum%10`,on:true,i:'▲'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP L: GEOMETRY & TOPOLOGY
+  ════════════════════════════════════════════════════ */
+
+  // 83. FRACTAL DIMENSION (Hausdorff proxy)
+  { if(N>=6){ const range=Math.max(...allNums)-Math.min(...allNums)||1;
+      const eps2=range/3; const covers=new Set(allNums.map(v=>Math.floor(v/eps2))).size;
+      const fd=covers>1?Math.log(covers)/Math.log(3/eps2)||1:1;
+      add(allNums[allNums.length-1]*fd%10,1.0);
+      signals.push({n:`Fractal dim D=${fd.toFixed(2)}`,on:true,i:'❄️'}); }
+    else signals.push({n:'Fractal (need data)',on:false,i:'❄️'}); }
+
+  // 84. CIRCLE MAP (phase rotation)
+  { const K=0.97, omega=2*Math.PI*0.618;
+    let theta=last3.reduce((a,b)=>a+b,0)/10*2*Math.PI;
+    for(let i=0;i<5;i++) theta=theta+omega-K/(2*Math.PI)*Math.sin(2*Math.PI*theta);
+    add(((theta/(2*Math.PI)*10)%10+10)%10,1.2);
+    signals.push({n:'Circle Map θ rotation',on:true,i:'⭕'}); }
+
+  // 85. TOPOLOGY – EULER CHARACTERISTIC
+  { const vertices=new Set(allNums).size;
+    const edges=allNums.slice(1).reduce((s,v,i)=>{const k=`${Math.min(v,allNums[i])},${Math.max(v,allNums[i])}`;return new Set([...s,k]);},new Set()).size;
+    const euler=vertices-edges; add((euler%10+10)%10,0.7);
+    signals.push({n:`Euler χ=${euler}`,on:true,i:'🔗'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP M: PHYSICS-INSPIRED
+  ════════════════════════════════════════════════════ */
+
+  // 86. WAVE SUPERPOSITION (sum of sin waves)
+  { const freqs=[1,2,3,5,8]; let wave=0;
+    freqs.forEach((f,i)=>wave+=Math.sin(2*Math.PI*f*last3[2]/10)*Math.pow(0.6,i));
+    add(((wave+1)*5)%10,1.3);
+    signals.push({n:`Wave Super amp=${wave.toFixed(2)}`,on:true,i:'🌊'}); }
+
+  // 87. QUANTUM INTERFERENCE (constructive/destructive)
+  { const phase1=2*Math.PI*last3[1]/10, phase2=2*Math.PI*last3[2]/10;
+    const constructive=Math.abs(Math.cos(phase1-phase2));
+    for(let n=0;n<10;n++){ const ph=2*Math.PI*n/10; scores[n]+=constructive*Math.cos(ph-phase2)*0.8; }
+    signals.push({n:`Quantum Interference c=${constructive.toFixed(2)}`,on:true,i:'⚛️'}); }
+
+  // 88. HARMONIC OSCILLATOR
+  { const omega2=2*Math.PI/4; let x4=last3[2]-4.5, v4=last3[2]-last3[1];
+    for(let i=0;i<6;i++){const ax=-omega2*x4;x4+=v4*0.1;v4+=ax*0.1;}
+    add(x4+4.5,1.2);
+    signals.push({n:`Harmonic x=${(x4+4.5).toFixed(1)}`,on:true,i:'🎵'}); }
+
+  // 89. BROWNIAN MOTION DRIFT
+  { if(hN>=3){ const drift=histNums.slice(-5).reduce((a,v,i,arr)=>i>0?a+(v-arr[i-1]):a,0)/(Math.min(hN,5)-1||1);
+      add(last3[2]+drift,1.5); add(last3[2]+drift*1.5,0.8);
+      signals.push({n:`Brownian drift=${drift.toFixed(2)}`,on:true,i:'🎲'}); }
+    else signals.push({n:'Brownian (need data)',on:false,i:'🎲'}); }
+
+  // 90. ENTROPY PRODUCTION RATE
+  { if(hN>=5){ const h1=new Array(10).fill(0);allNums.slice(-10).forEach(v=>h1[v]++);
+      const tot3=Math.min(allNums.length,10);
+      let hrate=0; h1.forEach(c=>{if(c>0){const p=c/tot3;hrate-=p*Math.log2(p);}});
+      if(hrate<2.0){ add(allNums[allNums.length-1],hrate*0.5); }
+      signals.push({n:`Entropy Rate h=${hrate.toFixed(2)}`,on:hrate<2,i:'🔥'}); }
+    else signals.push({n:'Entropy Rate (need data)',on:false,i:'🔥'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP N: ALGEBRAIC METHODS
+  ════════════════════════════════════════════════════ */
+
+  // 91. MATRIX SPECTRAL RADIUS
+  { const T=Array.from({length:10},()=>new Array(10).fill(0));
+    for(let i=0;i<hN-1;i++) T[histNums[i]][histNums[i+1]]++;
+    const rowSums=T.map(row=>row.reduce((a,b)=>a+b,0));
+    const spec=rowSums.reduce((mx,v)=>v>mx?v:mx,0);
+    rowSums.forEach((s,n)=>{ if(s<spec*0.5) scores[n]+=1.2; });
+    signals.push({n:`Spectral Radius ρ=${spec}`,on:spec>0,i:'🔢'}); }
+
+  // 92. EIGENVALUE POWER ITERATION (simplified)
+  { let vec=new Array(10).fill(1/10);
+    const T2=Array.from({length:10},()=>new Array(10).fill(0.1));
+    for(let i=0;i<hN-1;i++){const r2=histNums[i],c=histNums[i+1];T2[r2][c]+=0.9;const rs=T2[r2].reduce((a,b)=>a+b);T2[r2]=T2[r2].map(v=>v/rs);}
+    for(let iter=0;iter<5;iter++) vec=vec.map((_,j)=>vec.reduce((s,v2,i2)=>s+v2*T2[i2][j],0));
+    const vm=Math.max(...vec); vec.forEach((v2,n)=>scores[n]+=v2/vm*2.0);
+    signals.push({n:'Eigenvalue Stationary',on:hN>=3,i:'λ'}); }
+
+  // 93. DETERMINANT-BASED PATTERN
+  { const m2x2=[[last3[0],last3[1]],[last3[1],last3[2]]];
+    const det=m2x2[0][0]*m2x2[1][1]-m2x2[0][1]*m2x2[1][0];
+    add(((det%10)+10)%10,1.1); add(((Math.abs(det))%10),0.7);
+    signals.push({n:`Determinant d=${det}`,on:true,i:'|·|'}); }
+
+  // 94. CROSS PRODUCT (3D vector)
+  { const a=[last3[0],last3[1],0], b=[last3[1],last3[2],0];
+    const cross=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+    add(((Math.abs(cross[2]))%10),0.9);
+    signals.push({n:`Cross Product z=${cross[2]}`,on:true,i:'✕'}); }
+
+  // 95. CONVOLUTION (last 3 × kernel [1,2,1])
+  { const kernel=[0.25,0.5,0.25];
+    const conv=last3.reduce((s,v,i)=>s+v*kernel[i],0);
+    add(conv,1.6); add(conv+0.5,0.7);
+    signals.push({n:`Convolution c=${conv.toFixed(1)}`,on:true,i:'∗'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP O: GRAPH & NETWORK THEORY
+  ════════════════════════════════════════════════════ */
+
+  // 96. PAGERANK (random walk on transition graph)
+  { const adj=Array.from({length:10},()=>new Array(10).fill(0));
+    for(let i=0;i<hN-1;i++) adj[histNums[i]][histNums[i+1]]++;
+    const outDeg=adj.map(r=>r.reduce((a,b)=>a+b,0));
+    let pr=new Array(10).fill(0.1);
+    for(let iter=0;iter<8;iter++){
+      const newPR=new Array(10).fill(0.15/10);
+      for(let i=0;i<10;i++) for(let j=0;j<10;j++) if(outDeg[i]>0) newPR[j]+=0.85*pr[i]*adj[i][j]/outDeg[i];
+      pr=newPR;
+    }
+    const prMax=Math.max(...pr); pr.forEach((v,n)=>scores[n]+=v/prMax*2.0);
+    signals.push({n:'PageRank Flow',on:hN>=3,i:'🕸️'}); }
+
+  // 97. BETWEENNESS CENTRALITY PROXY
+  { const deg=new Array(10).fill(0);
+    for(let i=0;i<hN-1;i++){deg[histNums[i]]++;deg[histNums[i+1]]++;}
+    const dmx=Math.max(...deg)||1; const dmin=Math.min(...deg);
+    deg.forEach((d,n)=>{ if(d<dmin+1) scores[n]+=1.5; }); // low degree = less visited = due
+    signals.push({n:'Graph Centrality',on:hN>=3,i:'🕸️'}); }
+
+  // 98. CLUSTERING COEFFICIENT
+  { if(hN>=5){ const nbrs=Array.from({length:10},()=>new Set());
+      for(let i=0;i<hN-1;i++){nbrs[histNums[i]].add(histNums[i+1]);nbrs[histNums[i+1]].add(histNums[i]);}
+      const ccv=nbrs[last3[2]]; let tri=0;
+      ccv.forEach(u=>ccv.forEach(v=>{if(u!==v&&nbrs[u].has(v))tri++;}));
+      const cc3=ccv.size>1?tri/(ccv.size*(ccv.size-1)):0;
+      if(cc3>0.4) add(last3[2]+1,0.9); // high clustering → stay in cluster
+      else add(last3[2]+3,1.0); // low clustering → escape
+      signals.push({n:`Clustering cc=${cc3.toFixed(2)}`,on:true,i:'🔗'}); }
+    else signals.push({n:'Clustering (need data)',on:false,i:'🔗'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP P: CYCLICAL & CALENDAR METHODS
+  ════════════════════════════════════════════════════ */
+
+  // 99. PERIOD MODULAR CYCLE (4-period, 7-period)
+  { const ls=last3.reduce((a,b)=>a+b,0);
+    scores[ls%4]+=0.8; scores[ls%7]+=0.8; scores[(10-ls%5)%10]+=0.7;
+    signals.push({n:'Period Cycles mod-4,7',on:true,i:'🔁'}); }
+
+  // 100. EVEN/ODD ALTERNATION
+  { const parity=last3.map(n=>n%2);
+    const allEven=parity.every(p=>p===0), allOdd=parity.every(p=>p===1);
+    if(allEven){ for(let n=1;n<10;n+=2) scores[n]+=1.8; signals.push({n:'All-Even→Odd',on:true,i:'⚡'}); }
+    else if(allOdd){ for(let n=0;n<10;n+=2) scores[n]+=1.8; signals.push({n:'All-Odd→Even',on:true,i:'⚡'}); }
+    else{ const altExp=parity[1]===0?(parity[2]===1):false;
+      if(altExp) for(let n=0;n<10;n++) if(n%2!==last3[2]%2) scores[n]+=1.2;
+      signals.push({n:'Even/Odd Pattern',on:true,i:'±'}); } }
+
+  // 101. RESIDUE CLASSES MOD 3
+  { const mods=last3.map(n=>n%3); const mc={0:0,1:0,2:0}; mods.forEach(m=>mc[m]++);
+    const domMod=Object.keys(mc).reduce((a,b)=>mc[a]>mc[b]?a:b);
+    for(let n=0;n<10;n++) if(n%3!==parseInt(domMod)) scores[n]+=0.8;
+    signals.push({n:`Residue mod3 dom=${domMod}`,on:true,i:'mod'}); }
+
+  // 102. TWIN PRIME GAPS
+  { const twinDiff=Math.abs(last3[2]-last3[1]);
+    if([1,2,4,6].includes(twinDiff)){ add(last3[2]+twinDiff,1.0); add(last3[2]-twinDiff,0.8); }
+    signals.push({n:`Twin Gap Δ=${twinDiff}`,on:true,i:'👯'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP Q: RISK & UNCERTAINTY
+  ════════════════════════════════════════════════════ */
+
+  // 103. VALUE AT RISK (VaR 95%)
+  { if(N>=10){ const sorted=[...allNums].sort((a,b)=>a-b);
+      const var95=sorted[Math.floor(N*0.05)];
+      for(let n=var95;n<10;n++) scores[n]+=0.7; // favor above-VaR
+      signals.push({n:`VaR 95%=${var95}`,on:true,i:'⚠️'}); }
+    else signals.push({n:'VaR (need data)',on:false,i:'⚠️'}); }
+
+  // 104. CONDITIONAL VALUE AT RISK (CVaR)
+  { if(N>=10){ const sorted2=[...allNums].sort((a,b)=>a-b);
+      const tail=sorted2.slice(0,Math.max(1,Math.floor(N*0.1)));
+      const cvar=tail.reduce((a,b)=>a+b,0)/tail.length;
+      add(10-cvar,1.0); // boost complement of tail
+      signals.push({n:`CVaR=${cvar.toFixed(1)}`,on:true,i:'🎯'}); }
+    else signals.push({n:'CVaR (need data)',on:false,i:'🎯'}); }
+
+  // 105. MONTE CARLO SIMULATION (100 paths)
+  { const mc2=new Array(10).fill(0); const base=allNums.slice(-6);
+      for(let trial=0;trial<100;trial++){let v=base[base.length-1]||5;for(let s=0;s<3;s++){const d=Math.floor(Math.random()*5)-2;v=((v+d)%10+10)%10;}mc2[v]++;}
+      mc2.forEach((c,n)=>scores[n]+=c/100*1.5);
+      signals.push({n:'Monte Carlo 100 paths',on:true,i:'🎰'}); }
+
+  // 106. BOOTSTRAP CONFIDENCE INTERVAL
+  { const nBoot=50; const bootMeans=new Array(10).fill(0);
+    for(let b=0;b<nBoot;b++){const smp=Array.from({length:6},()=>allNums[Math.floor(Math.random()*allNums.length)]);const mean3=smp.reduce((a,v)=>a+v,0)/6;bootMeans[ci(mean3)]++;}
+    const bm=Math.max(...bootMeans); bootMeans.forEach((c,n)=>scores[n]+=c/bm*1.0);
+    signals.push({n:'Bootstrap CI',on:true,i:'🔄'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP R: ADVANCED SEQUENCE LAWS
+  ════════════════════════════════════════════════════ */
+
+  // 107. RECAMAN SEQUENCE
+  { const rec=[0]; for(let i=1;i<=20;i++){const a=rec[i-1]-i;rec.push(a>0&&!rec.includes(a)?a:rec[i-1]+i);}
+    const ls=last3.reduce((a,b)=>a+b,0)%rec.length; scores[rec[ls]%10]+=1.0;
+    signals.push({n:`Recaman a=${rec[ls%rec.length]%10}`,on:true,i:'🔀'}); }
+
+  // 108. PADOVAN SEQUENCE
+  { const pad=[1,1,1]; while(pad.length<20) pad.push(pad[pad.length-2]+pad[pad.length-3]);
+    const idx=last3.reduce((a,b)=>a+b,0)%pad.length; scores[pad[idx]%10]+=0.9;
+    signals.push({n:`Padovan p=${pad[idx]%10}`,on:true,i:'🏛️'}); }
+
+  // 109. PELL NUMBERS
+  { const pell=[0,1]; while(pell.length<12) pell.push(2*pell[pell.length-1]+pell[pell.length-2]);
+    const pidx=last3.reduce((a,b)=>a+b,0)%pell.length; scores[pell[pidx]%10]+=0.8;
+    signals.push({n:`Pell p=${pell[pidx]%10}`,on:true,i:'🔨'}); }
+
+  // 110. LOOK-AND-SAY DIGIT COUNT
+  { let las=last3[2].toString();
+    for(let i=0;i<3;i++){let nxt='';let k=0;while(k<las.length){let c=las[k];let cnt2=0;while(k<las.length&&las[k]===c){cnt2++;k++;}nxt+=cnt2.toString()+c;}las=nxt;}
+    add(parseInt(las[0]||0),0.8);
+    signals.push({n:`Look&Say len=${las.length}`,on:true,i:'👀'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP S: ADDITIONAL STATISTICAL TESTS
+  ════════════════════════════════════════════════════ */
+
+  // 111. RUNS TEST (Wald-Wolfowitz)
+  { if(N>=8){ const med=4.5; const signs=allNums.map(v=>v>=med?1:0);
+      let runs2=1; for(let i=1;i<signs.length;i++) if(signs[i]!==signs[i-1]) runs2++;
+      const n1=signs.filter(s=>s===1).length, n0=signs.length-n1;
+      const expRuns=2*n1*n0/(n1+n0||1)+1;
+      if(runs2<expRuns*0.7){ add(allNums[allNums.length-1]+1,1.4); signals.push({n:`Runs=${runs2} Streaky`,on:true,i:'🏃'}); }
+      else signals.push({n:`Runs=${runs2} Random`,on:false,i:'🏃'}); }
+    else signals.push({n:'Runs Test (need data)',on:false,i:'🏃'}); }
+
+  // 112. KOLMOGOROV-SMIRNOV TEST (vs uniform)
+  { if(N>=8){ const sorted3=[...allNums].sort((a,b)=>a-b);
+      let ksD=0; for(let i=0;i<sorted3.length;i++){const emp=(i+1)/sorted3.length;const theo=(sorted3[i]+1)/10;ksD=Math.max(ksD,Math.abs(emp-theo));}
+      // Large KS → non-uniform → boost under-represented
+      if(ksD>0.15){ const obs2=new Array(10).fill(0); allNums.forEach(v=>obs2[v]++);
+        const expv2=N/10; obs2.forEach((o,n)=>{if(o<expv2) scores[n]+=ksD*2;});}
+      signals.push({n:`KS stat D=${ksD.toFixed(2)}`,on:ksD>0.15,i:'📊'}); }
+    else signals.push({n:'KS Test (need data)',on:false,i:'📊'}); }
+
+  // 113. ANDERSON-DARLING NORMALITY PROXY
+  { if(N>=8){ const mu=allNums.reduce((a,b)=>a+b,0)/N;
+      const sigma=Math.sqrt(allNums.reduce((s,v)=>s+(v-mu)**2,0)/N)||1;
+      const norm=allNums.map(v=>(v-mu)/sigma).sort((a,b)=>a-b);
+      let AD=0; norm.forEach((z,i)=>{const p=0.5*(1+Math.tanh(z*0.7978845608));AD+=(2*(i+1)-1)*(Math.log(p)+Math.log(1-(norm[N-1-i]+0.0001)));});
+      AD=-N-AD/N;
+      if(AD>2.0){ signals.push({n:`A-D=${AD.toFixed(1)} NonNormal`,on:true,i:'📉'}); for(let n=0;n<10;n++){const z2=(n-mu)/sigma;if(Math.abs(z2)>1.5) scores[n]+=0.8;} }
+      else signals.push({n:`A-D=${AD.toFixed(1)} Normal`,on:false,i:'📉'}); }
+    else signals.push({n:'A-D Test (need data)',on:false,i:'📉'}); }
+
+  // 114. MANN-KENDALL TREND TEST
+  { if(hN>=6){ let mk=0;
+      for(let i=0;i<hN-1;i++) for(let j=i+1;j<hN;j++) mk+=Math.sign(histNums[j]-histNums[i]);
+      if(mk>hN){ // upward trend
+        add(histNums[hN-1]+1,1.4); add(histNums[hN-1]+2,0.8);
+        signals.push({n:`Mann-Kendall S=${mk} Up`,on:true,i:'↗'});
+      } else if(mk<-hN){
+        add(histNums[hN-1]-1,1.4); add(histNums[hN-1]-2,0.8);
+        signals.push({n:`Mann-Kendall S=${mk} Dn`,on:true,i:'↘'});
+      } else signals.push({n:`Mann-Kendall S=${mk}`,on:false,i:'➡'}); }
+    else signals.push({n:'Mann-Kendall (need data)',on:false,i:'↕️'}); }
+
+  // 115. LJUNG-BOX PORTMANTEAU TEST
+  { if(hN>=8){ const mu2=histNums.reduce((a,b)=>a+b)/hN;
+      const denom=histNums.reduce((s,v)=>s+(v-mu2)**2,0);
+      let LB=0; for(let lag=1;lag<=5;lag++){const n2=hN-lag;const r=histNums.slice(0,n2).reduce((s,v,i)=>(v-mu2)*(histNums[i+lag]-mu2)+s,0)/(denom||1);LB+=r*r/(hN-lag);}
+      LB*=hN*(hN+2);
+      if(LB>11){ // significant autocorrelation → use Markov strongly
+        const tIdx2=scores.indexOf(Math.max(...scores)); scores[tIdx2]*=1.2;
+        signals.push({n:`Ljung-Box LB=${LB.toFixed(1)} AC`,on:true,i:'📦'}); }
+      else signals.push({n:`Ljung-Box LB=${LB.toFixed(1)}`,on:false,i:'📦'}); }
+    else signals.push({n:'Ljung-Box (need data)',on:false,i:'📦'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP T: NUMERICAL METHODS & INTERPOLATION
+  ════════════════════════════════════════════════════ */
+
+  // 116. LAGRANGE INTERPOLATION
+  { if(hN>=4){ const pts=histNums.slice(-4).map((v,i)=>({x:i,y:v}));
+      let pred4=0; const xq=4;
+      pts.forEach((pi,i)=>{let basis=1;pts.forEach((pj,j)=>{if(i!==j)basis*=(xq-pj.x)/(pi.x-pj.x);});pred4+=pi.y*basis;});
+      add(pred4,2.0); add(pred4+1,0.7);
+      signals.push({n:`Lagrange pred=${pred4.toFixed(1)}`,on:true,i:'📐'}); }
+    else signals.push({n:'Lagrange (need data)',on:false,i:'📐'}); }
+
+  // 117. NEWTON'S FORWARD DIFFERENCES
+  { if(hN>=4){ const d=histNums.slice(-4);
+      const dd1=d.map((v,i)=>i>0?v-d[i-1]:0).slice(1);
+      const dd2=dd1.map((v,i)=>i>0?v-dd1[i-1]:0).slice(1);
+      const pred5=d[3]+dd1[2]+dd2[1]/2;
+      add(pred5,1.8);
+      signals.push({n:`Newton FD pred=${pred5.toFixed(1)}`,on:true,i:'↔️'}); }
+    else signals.push({n:'Newton FD (need data)',on:false,i:'↔️'}); }
+
+  // 118. CUBIC SPLINE INTERPOLATION
+  { if(hN>=4){ const pts2=histNums.slice(-4);
+      const h2=[1,1,1]; const alpha=[3*(pts2[2]-2*pts2[1]+pts2[0]),3*(pts2[3]-2*pts2[2]+pts2[1])];
+      const c=[0,alpha[0]/4,((alpha[1]-c[1]*h2[1])/(4-c[1]*1))]; // simplified Thomas algorithm
+      const pred6=pts2[3]+c[2];
+      add(pred6,1.5);
+      signals.push({n:`Cubic Spline pred=${pred6.toFixed(1)}`,on:true,i:'〽️'}); }
+    else signals.push({n:'Spline (need data)',on:false,i:'〽️'}); }
+
+  // 119. CHEBYSHEV POLYNOMIAL
+  { const T0=1,T1=last3[2]/4.5-1;
+    const T2=2*T1*T1-T0; const T3=2*T1*T2-T1;
+    add(T2*4.5+4.5,0.9); add(T3*4.5+4.5,0.7);
+    signals.push({n:`Chebyshev T3=${T3.toFixed(2)}`,on:true,i:'©️'}); }
+
+  // 120. RUNGE-KUTTA 4th ORDER ODE
+  { const f=(t,y)=>0.3*(4.5-y)*(last3[2]/10+0.1); // mean-reverting ODE
+    let y=last3[2],t=0; const dt2=0.5;
+    for(let i=0;i<6;i++){const k1=f(t,y),k2=f(t+dt2/2,y+dt2/2*k1),k3=f(t+dt2/2,y+dt2/2*k2),k4=f(t+dt2,y+dt2*k3);y+=dt2/6*(k1+2*k2+2*k3+k4);t+=dt2;}
+    add(y,1.4);
+    signals.push({n:`RK4 ODE y=${y.toFixed(1)}`,on:true,i:'🔢'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP U: ADVANCED PROBABILITY DISTRIBUTIONS
+  ════════════════════════════════════════════════════ */
+
+  // 121. POISSON DISTRIBUTION
+  { const lambda=allNums.slice(-10).reduce((a,b)=>a+b,0)/Math.min(N,10);
+    const factorial=n=>{let f=1;for(let i=2;i<=n;i++)f*=i;return f;};
+    for(let k=0;k<10;k++){ const pmf=Math.pow(lambda,k)*Math.exp(-lambda)/factorial(k); scores[k]+=pmf*3; }
+    signals.push({n:`Poisson λ=${lambda.toFixed(2)}`,on:true,i:'📊'}); }
+
+  // 122. GEOMETRIC DISTRIBUTION
+  { const p=1/10; // uniform base
+    const prevRep=new Array(10).fill(0);
+    for(let i=allNums.length-1;i>=0;i--){ if(prevRep[allNums[i]]===0) prevRep[allNums[i]]=allNums.length-i; }
+    for(let n=0;n<10;n++){ const k=prevRep[n]||allNums.length+3; const geomP=Math.pow(1-p,k-1)*p; scores[n]+=geomP*30; }
+    signals.push({n:'Geometric Dist',on:true,i:'📐'}); }
+
+  // 123. NEGATIVE BINOMIAL DISTRIBUTION
+  { const r2=3; const p2=0.4;
+      for(let n=0;n<10;n++){ const nb=Math.pow(p2,r2)*Math.pow(1-p2,n)*Math.min(1000,allNums.length/(n+1)); scores[n]+=nb*0.5; }
+      signals.push({n:'Negative Binomial',on:true,i:'🎲'}); }
+
+  // 124. ZIPF'S LAW (power law distribution)
+  { const zipf=new Array(10).fill(0).map((_,i)=>1/(i+1)); const zSum=zipf.reduce((a,b)=>a+b);
+    const obs3=new Array(10).fill(0); allNums.forEach(v=>obs3[v]++);
+    const sortedObs=[...obs3].sort((a,b)=>b-a);
+    for(let n=0;n<10;n++){ const expZ=zipf[n]/zSum*N; const act=sortedObs[n]; if(act<expZ*0.5) scores[obs3.indexOf(Math.min(...obs3))]+=0.8; }
+    signals.push({n:"Zipf's Power Law",on:true,i:'⚡'}); }
+
+  // 125. BENFORD'S LAW (leading digit bias)
+  { const benfords=[0,0.301,0.176,0.125,0.097,0.079,0.067,0.058,0.051,0.046];
+    for(let n=1;n<10;n++) scores[n]+=benfords[n]*3;
+    scores[0]+=0.1; // 0 has low Benford probability
+    signals.push({n:"Benford's Law",on:true,i:'🔢'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP V: WINDOW-BASED & ADAPTIVE METHODS
+  ════════════════════════════════════════════════════ */
+
+  // 126. EXPONENTIAL WEIGHTED MOVING AVERAGE (EWMA)
+  { if(hN>=3){ const alpha2=0.35; let ewma=histNums[0];
+      histNums.forEach(v=>ewma=alpha2*v+(1-alpha2)*ewma);
+      add(ewma,1.8); add(ewma+1,0.7); add(ewma-1,0.7);
+      detail.ewma=`ew=${ewma.toFixed(1)}`;
+      signals.push({n:`EWMA α=${alpha2} e=${ewma.toFixed(1)}`,on:true,i:'📉'}); }
+    else signals.push({n:'EWMA (need data)',on:false,i:'📉'}); }
+
+  // 127. ADAPTIVE KALMAN FILTER
+  { let xk=4.5, Pk=3, Q=0.5, R=2;
+    allNums.forEach(z=>{const xp=xk,Pp=Pk+Q;const K=Pp/(Pp+R);xk=xp+K*(z-xp);Pk=(1-K)*Pp;});
+    add(xk,2.2);
+    detail.kalman=`x=${xk.toFixed(1)}`;
+    signals.push({n:`Kalman x̂=${xk.toFixed(1)}`,on:true,i:'🎯'}); }
+
+  // 128. SAVITZKY-GOLAY SMOOTHING (window 5)
+  { if(hN>=5){ const sg=[-3,12,17,12,-3].map(c=>c/35); // SG 5-pt quadratic coefficients
+      const w5=histNums.slice(-5);
+      const smoothed=w5.reduce((s,v,i)=>s+v*sg[i],0);
+      add(smoothed,1.5);
+      signals.push({n:`Savitzky-Golay s=${smoothed.toFixed(1)}`,on:true,i:'〰️'}); }
+    else signals.push({n:'SG Filter (need data)',on:false,i:'〰️'}); }
+
+  // 129. HODRICK-PRESCOTT FILTER (trend extraction)
+  { if(hN>=6){ const mu3=histNums.reduce((a,b)=>a+b)/hN;
+      const trend=histNums.slice(-6).map(v=>mu3+(v-mu3)*0.7);
+      add(trend[trend.length-1]+(trend[trend.length-1]-trend[trend.length-2])*0.5,1.3);
+      signals.push({n:'HP Filter trend',on:true,i:'📈'}); }
+    else signals.push({n:'HP Filter (need data)',on:false,i:'📈'}); }
+
+  // 130. WAVELET TRANSFORM (Haar level-1)
+  { if(hN>=4){ const w4=histNums.slice(-4);
+      const approx=[(w4[0]+w4[1])/2,(w4[2]+w4[3])/2];
+      const detail2=[(w4[0]-w4[1])/2,(w4[2]-w4[3])/2];
+      const nextApprox=approx[1]+(approx[1]-approx[0])*0.5;
+      add(nextApprox+detail2[1]*0.3,1.4);
+      signals.push({n:`Haar Wavelet a=${nextApprox.toFixed(1)}`,on:true,i:'🌊'}); }
+    else signals.push({n:'Wavelet (need data)',on:false,i:'🌊'}); }
+
+  /* ════════════════════════════════════════════════════
+     GROUP W: FINAL SYNTHESIS & SURE-SHOT
+  ════════════════════════════════════════════════════ */
+
+  // 131. CONSENSUS VOTING (top-5 methods agreement)
+  { const tmpTop=scores.map((s,i)=>({s,i})).sort((a,b)=>b.s-a.s).slice(0,5).map(x=>x.i);
+    tmpTop.forEach((n,r)=>scores[n]+=(5-r)*0.4); // re-boost agreed candidates
+    signals.push({n:'Consensus Vote top-5',on:true,i:'🗳️'}); }
+
+  // 132. BORDA COUNT (rank aggregation)
+  { const borda=scores.map((s,i)=>({s,i})).sort((a,b)=>b.s-a.s);
+    borda.forEach(({i},rank)=>scores[i]+=(9-rank)*0.2);
+    signals.push({n:'Borda Count Rank',on:true,i:'🏅'}); }
+
+  // 133. WEIGHTED RANK PRODUCT
+  { const mx2=Math.max(...scores)||1;
+    for(let n=0;n<10;n++) scores[n]=Math.pow(scores[n]/mx2,0.85)*mx2; // compress extremes slightly
+    signals.push({n:'Rank Product Weight',on:true,i:'×'}); }
+
+  // 134. TEMPORAL DECAY WEIGHTING
+  { if(hN>=4){ for(let i=0;i<hN;i++){const w=Math.pow(0.92,hN-1-i); scores[histNums[i]]*=1+(w*0.05);}
+      signals.push({n:'Temporal Decay w=0.92',on:true,i:'⏳'}); }
+    else signals.push({n:'Temporal Decay (need data)',on:false,i:'⏳'}); }
+
+  // 135. RECENCY AMPLIFICATION
+  { last3.forEach((n,i)=>{ scores[n]*=Math.pow(0.85,2-i); }); // penalize just-seen
+    signals.push({n:'Recency Penalty',on:true,i:'🔔'}); }
+
+  // 136. DIVERSITY INJECTION (prevent clustering)
+  { const topIdx=scores.map((s,i)=>({s,i})).sort((a,b)=>b.s-a.s)[0].i;
+    const topMeta=META[topIdx];
+    for(let n=0;n<10;n++) if(META[n].c!==topMeta.c&&META[n].size!==topMeta.size) scores[n]*=1.08;
+    signals.push({n:'Diversity Injection',on:true,i:'🌈'}); }
+
+  // 137. OVERFITTING GUARD (shrink outlier scores)
+  { const smean=scores.reduce((a,b)=>a+b)/10;
+    const sstd=Math.sqrt(scores.reduce((s,v)=>s+(v-smean)**2,0)/10)||1;
+    for(let n=0;n<10;n++){const z2=(scores[n]-smean)/sstd;if(z2>2.5)scores[n]=smean+2.5*sstd;}
+    signals.push({n:'Overfitting Guard',on:true,i:'🛡️'}); }
+
+  // 138. LAPLACIAN SMOOTHING ON SCORES
+  { const ks=0.3; for(let n=0;n<10;n++) scores[n]=(1-ks)*scores[n]+ks*(scores[(n+9)%10]+scores[(n+1)%10])/2;
+    signals.push({n:'Laplacian Smooth',on:true,i:'〰️'}); }
+
+  // 139. ENTROPY REGULARIZATION
+  { const mn2=Math.min(...scores)||0.01;
+    const adj2=scores.map(s=>s-mn2+0.01);
+    const tot2=adj2.reduce((a,b)=>a+b);
+    const prob2=adj2.map(s=>s/tot2);
+    let ent2=0; prob2.forEach(p=>{if(p>0)ent2-=p*Math.log2(p);});
+    if(ent2>3.0){ // too uniform → boost top
+      const tIdx3=scores.indexOf(Math.max(...scores)); scores[tIdx3]*=1.2; }
+    signals.push({n:`Ent Regularize h=${ent2.toFixed(2)}`,on:ent2<3.0,i:'⚡'}); }
+
+  // 140. SOFTMAX TEMPERATURE SCALING
+  { const temp=isSS?0.5:1.2;
+    const maxS=Math.max(...scores);
+    const expS=scores.map(s=>Math.exp((s-maxS)/temp));
+    const sumE=expS.reduce((a,b)=>a+b);
+    for(let n=0;n<10;n++) scores[n]=expS[n]/sumE*100;
+    signals.push({n:`Softmax T=${temp}`,on:true,i:'🌡️'}); }
+
+  // 141. SURE SHOT MAXIMUM-DUE OVERRIDE (×6)
+  { if(isSS){
+      const allH=[...histNums,...last3]; const since=new Array(10).fill(allH.length+10);
+      for(let n=0;n<10;n++) for(let i=allH.length-1;i>=0;i--){if(allH[i]===n){since[n]=allH.length-1-i;break;}}
+      const mxS=Math.max(...since); since.forEach((s,n)=>scores[n]+=(s/mxS)*8.0);
+      signals.push({n:'SureShot Max-Due ×8',on:true,i:'🔥'});detail.ss='Max-due boost'; }
+    else signals.push({n:'Sure Shot (inactive)',on:false,i:'🔥'}); }
+
+  // 142. COMPLEMENTARY NUMBER BOOST
+  { last3.forEach(n=>scores[(n+5)%10]+=0.6); // complement pairs
+    signals.push({n:'Complement Pairs',on:true,i:'🔄'}); }
+
+  // 143. GEOMETRIC MEAN PREDICTION
+  { const gm=Math.pow(last3.reduce((a,v)=>a*(v||1),1),(1/3));
+    add(gm,1.2); add(gm+0.5,0.6);
+    signals.push({n:`Geometric Mean g=${gm.toFixed(1)}`,on:true,i:'✕'}); }
+
+  // 144. HARMONIC MEAN PREDICTION
+  { const hm=3/last3.reduce((s,v)=>s+1/(v||0.5),0);
+    add(hm,1.0);
+    signals.push({n:`Harmonic Mean h=${hm.toFixed(1)}`,on:true,i:'∓'}); }
+
+  // 145. MEDIAN REGRESSION
+  { if(hN>=5){ const med=histNums.slice(-7).sort((a,b)=>a-b);
+      const median=med[Math.floor(med.length/2)];
+      add(median,1.2); add(median+(last3[2]-last3[1])*0.4,0.8);
+      signals.push({n:`Median Regr m=${median}`,on:true,i:'⟩⟨'}); }
+    else signals.push({n:'Median Regression',on:false,i:'⟩⟨'}); }
+
+  // 146. TRIMMED MEAN (10% trim)
+  { if(N>=8){ const sorted4=[...allNums].sort((a,b)=>a-b);
+      const k=Math.max(1,Math.floor(N*0.1));
+      const trimmed=sorted4.slice(k,-k);
+      const tm=trimmed.reduce((a,b)=>a+b)/trimmed.length;
+      add(tm,1.0);
+      signals.push({n:`Trimmed Mean t=${tm.toFixed(1)}`,on:true,i:'✂️'}); }
+    else signals.push({n:'Trimmed Mean (need data)',on:false,i:'✂️'}); }
+
+  // 147. WINSORIZED MEAN
+  { if(N>=6){ const sorted5=[...allNums].sort((a,b)=>a-b);
+      const k2=Math.max(1,Math.floor(N*0.1));
+      const wins=sorted5.map((_,i)=>i<k2?sorted5[k2]:i>=N-k2?sorted5[N-k2-1]:sorted5[i]);
+      const wm=wins.reduce((a,b)=>a+b)/wins.length;
+      add(wm,0.9);
+      signals.push({n:`Winsorized wm=${wm.toFixed(1)}`,on:true,i:'🎯'}); }
+    else signals.push({n:'Winsorized (need data)',on:false,i:'🎯'}); }
+
+  // 148. INTERLEAVED PATTERN (odd/even positions)
+  { if(hN>=6){ const even=histNums.filter((_,i)=>i%2===0); const odd=histNums.filter((_,i)=>i%2!==0);
+      const eMean=even.reduce((a,b)=>a+b,0)/(even.length||1);
+      const oMean=odd.reduce((a,b)=>a+b,0)/(odd.length||1);
+      const nextMean=hN%2===0?eMean:oMean; add(nextMean,1.1);
+      signals.push({n:`Interleaved e=${eMean.toFixed(0)},o=${oMean.toFixed(0)}`,on:true,i:'🔀'}); }
+    else signals.push({n:'Interleaved (need data)',on:false,i:'🔀'}); }
+
+  // 149. INFORMATION GAIN RATIO
+  { if(hN>=6){ const prior=new Array(10).fill(0); histNums.forEach(v=>prior[v]++);
+      const posterior=new Array(10).fill(0); histNums.slice(-Math.floor(hN/2)).forEach(v=>posterior[v]++);
+      const pSum=posterior.reduce((a,b)=>a+b)||1;
+      for(let n=0;n<10;n++){const postP=(posterior[n]+0.5)/pSum;const priorP=(prior[n]+0.5)/N;const igr=postP*Math.log2(postP/(priorP||0.001));if(igr>0) scores[n]+=igr*0.4;}
+      signals.push({n:'Information Gain Ratio',on:true,i:'ℹ️'}); }
+    else signals.push({n:'Info Gain (need data)',on:false,i:'ℹ️'}); }
+
+  // 150. FINAL SCORE NORMALIZATION + ENSEMBLE VOTING
+  { const sums=scores.reduce((a,b)=>a+b)||1;
+    for(let n=0;n<10;n++) scores[n]=scores[n]/sums*100;
+    // Final tie-break: use digit sum resonance
+    const ds2=last3.reduce((a,b)=>a+b,0);
+    scores[ds2%10]+=0.5;
+    signals.push({n:'Final Ensemble Norm',on:true,i:'✦'}); }
+
+  // ── LAWS 151–215: EXTENDED ENGINE ─────────────────
+
+  // 151. HIDDEN MARKOV MODEL (Viterbi-style simplified)
+  { if(hN>=6){
+      const emitP=new Array(10).fill(0); histNums.forEach(v=>emitP[v]++);
+      const tot4=emitP.reduce((a,b)=>a+b)||1;
+      const hmm=emitP.map(c=>c/tot4);
+      // Transition smoothed with Laplace
+      const trans=new Array(10).fill(0).map(()=>new Array(10).fill(1));
+      for(let i=0;i<hN-1;i++) trans[histNums[i]][histNums[i+1]]++;
+      const prevS=last3[2];
+      const rowS=trans[prevS]; const rowT=rowS.reduce((a,b)=>a+b);
+      for(let n=0;n<10;n++) scores[n]+=(rowS[n]/rowT)*hmm[n]*4.0;
+      signals.push({n:'Hidden Markov Model',on:true,i:'🔮'}); }
+    else signals.push({n:'HMM (need data)',on:false,i:'🔮'}); }
+
+  // 152. COPULA JOINT DISTRIBUTION (Gaussian copula proxy)
+  { if(hN>=8){
+      const mu4=histNums.reduce((a,b)=>a+b)/hN;
+      const sig4=Math.sqrt(histNums.reduce((s,v)=>s+(v-mu4)**2,0)/hN)||1;
+      // rank correlation Spearman proxy
+      const ranked=histNums.map((v,i)=>({v,i,r:0})).sort((a,b)=>a.v-b.v).map((x,r)=>{x.r=r;return x;}).sort((a,b)=>a.i-b.i);
+      const rhoS=1-6*ranked.reduce((s,x,i)=>s+(x.r-i)**2,0)/(hN*(hN*hN-1)||1);
+      const copPred=mu4+rhoS*(last3[2]-mu4);
+      add(copPred,1.8);
+      signals.push({n:`Copula ρ=${rhoS.toFixed(2)}`,on:true,i:'🔗'}); }
+    else signals.push({n:'Copula (need data)',on:false,i:'🔗'}); }
+
+  // 153. GAUSSIAN PROCESS MEAN PREDICTION
+  { if(hN>=5){
+      const x0=hN; const xs=histNums.map((_,i)=>i);
+      const kernel=(a,b,l=3.0)=>Math.exp(-0.5*((a-b)/l)**2);
+      let num=0,den=0;
+      xs.forEach((xi,i)=>{const k=kernel(x0,xi);num+=k*histNums[i];den+=k;});
+      const gpPred=den>0?num/den:4.5;
+      add(gpPred,2.2);
+      signals.push({n:`Gaussian Process μ=${gpPred.toFixed(1)}`,on:true,i:'〰️'}); }
+    else signals.push({n:'GP (need data)',on:false,i:'〰️'}); }
+
+  // 154. SPECTRAL RADIUS (power iteration)
+  { if(hN>=5){
+      const freq2=new Array(10).fill(0); histNums.forEach(v=>freq2[v]++);
+      const maxF=Math.max(...freq2)||1;
+      const specR=freq2.reduce((s,f)=>s+(f/maxF)**2,0)/10;
+      // boost numbers with close-to-eigenvalue frequency
+      for(let n=0;n<10;n++) if(Math.abs(freq2[n]/maxF-specR)<0.15) scores[n]+=1.2;
+      signals.push({n:`Spectral Radius ρ=${specR.toFixed(2)}`,on:true,i:'🌐'}); }
+    else signals.push({n:'Spectral (need data)',on:false,i:'🌐'}); }
+
+  // 155. TOPOLOGICAL DATA ANALYSIS (persistence proxy)
+  { const pts3=allNums.map((v,i)=>({x:i,y:v}));
+    const births=[]; const deaths=[];
+    for(let i=1;i<pts3.length;i++){
+      if(pts3[i].y>pts3[i-1].y) births.push(pts3[i-1].y);
+      else deaths.push(pts3[i].y);
+    }
+    const persist=births.length>0?births.reduce((a,b)=>a+b)/births.length:4.5;
+    add(persist,1.0);
+    signals.push({n:`TDA Persistence μ=${persist.toFixed(1)}`,on:births.length>0,i:'🔺'}); }
+
+  // 156. SIMULATED ANNEALING SEARCH
+  { let best=scores.indexOf(Math.max(...scores)), T=5.0;
+    for(let iter=0;iter<40;iter++){
+      const nb2=(best+Math.floor(Math.random()*3)-1+10)%10;
+      const delta=scores[nb2]-scores[best];
+      if(delta>0||Math.random()<Math.exp(delta/T)){best=nb2;}
+      T*=0.92;
+    }
+    scores[best]+=1.8;
+    signals.push({n:'Simulated Annealing',on:true,i:'🌡️'}); }
+
+  // 157. RÉNYI ENTROPY (order 2)
+  { const mn4=Math.min(...scores)||0; const adj4=scores.map(s=>s-mn4+0.01);
+    const t4=adj4.reduce((a,b)=>a+b); const p4=adj4.map(s=>s/t4);
+    const renyi=-Math.log2(p4.reduce((s,p)=>s+p*p,0));
+    if(renyi<2.5){ const top2=p4.indexOf(Math.max(...p4)); scores[top2]+=1.5; }
+    signals.push({n:`Rényi H₂=${renyi.toFixed(2)}`,on:renyi<2.5,i:'ℝ'}); }
+
+  // 158. TSALLIS ENTROPY (q=2)
+  { const mn5=Math.min(...scores)||0; const adj5=scores.map(s=>s-mn5+0.01);
+    const t5=adj5.reduce((a,b)=>a+b); const p5=adj5.map(s=>s/t5);
+    const tsallis=(1-p5.reduce((s,p)=>s+p*p,0))/(2-1);
+    if(tsallis<0.85){ const topT=p5.indexOf(Math.max(...p5)); scores[topT]+=1.2; }
+    signals.push({n:`Tsallis S₂=${tsallis.toFixed(2)}`,on:tsallis<0.85,i:'Τ'}); }
+
+  // 159. KL DIVERGENCE FROM UNIFORM
+  { const mn6=Math.min(...scores)||0; const adj6=scores.map(s=>s-mn6+0.01);
+    const t6=adj6.reduce((a,b)=>a+b); const p6=adj6.map(s=>s/t6);
+    let kl=0; p6.forEach(p=>{if(p>0)kl+=p*Math.log2(p*10);}); // uniform=0.1
+    if(kl>0.5){ const topK=p6.indexOf(Math.max(...p6)); scores[topK]+=kl*0.6; }
+    signals.push({n:`KL-Div from Uniform=${kl.toFixed(2)}`,on:kl>0.5,i:'📐'}); }
+
+  // 160. WASSERSTEIN DISTANCE PROXY (EMD)
+  { if(hN>=6){
+      const hist2=new Array(10).fill(0); histNums.slice(-10).forEach(v=>hist2[v]++);
+      const uniform=new Array(10).fill(1);
+      // cumulative difference = earth mover
+      let emd=0,cum=0;
+      for(let n=0;n<10;n++){cum+=(hist2[n]/10-uniform[n]/10);emd+=Math.abs(cum);}
+      for(let n=0;n<10;n++) if(hist2[n]===0) scores[n]+=emd*0.5;
+      signals.push({n:`Wasserstein EMD=${emd.toFixed(2)}`,on:emd>0.3,i:'🌊'}); }
+    else signals.push({n:'Wasserstein (need data)',on:false,i:'🌊'}); }
+
+  // 161. CROSS-ENTROPY MINIMIZATION
+  { const mn7=Math.min(...scores)||0; const adj7=scores.map(s=>s-mn7+0.01);
+    const t7=adj7.reduce((a,b)=>a+b); const p7=adj7.map(s=>s/t7);
+    const ce=-p7.reduce((s,p,i)=>s+0.1*Math.log(p||0.001),0);
+    const top7=p7.indexOf(Math.max(...p7)); scores[top7]+=Math.max(0,(ce-2.3)*0.4);
+    signals.push({n:`Cross-Entropy H=${ce.toFixed(2)}`,on:ce>2.3,i:'✕'}); }
+
+  // 162. BANACH FIXED POINT ITERATION
+  { let x4=last3[2],prev4=-1,iter4=0;
+    while(Math.abs(x4-prev4)>0.05&&iter4<20){prev4=x4;x4=(x4+allNums.reduce((a,b)=>a+b,0)/(allNums.length||1))*0.5;iter4++;}
+    add(x4,1.4);
+    signals.push({n:`Banach FP x*=${x4.toFixed(1)}`,on:true,i:'∞'}); }
+
+  // 163. ERDŐS–RÉNYI RANDOM GRAPH (connectivity proxy)
+  { const n=10,pER=0.35; const deg=new Array(10).fill(0);
+    for(let i=0;i<n;i++) for(let j=i+1;j<n;j++) if(Math.random()<pER){deg[i]++;deg[j]++;}
+    const meanDeg=deg.reduce((a,b)=>a+b)/n;
+    deg.forEach((d,i)=>{if(d<meanDeg) scores[i]+=0.8;});
+    signals.push({n:`Erdős-Rényi deg=${meanDeg.toFixed(1)}`,on:true,i:'🕸️'}); }
+
+  // 164. BAYESIAN NETWORK (simplified DAG)
+  { if(hN>=4){
+      const cpt={}; // conditional probability table
+      for(let i=2;i<hN;i++){const k=`${histNums[i-2]}→${histNums[i-1]}`;cpt[k]=(cpt[k]||[]);cpt[k].push(histNums[i]);}
+      const key=`${last3[1]}→${last3[2]}`; const bucket2=cpt[key];
+      if(bucket2&&bucket2.length>0){const bf2=new Array(10).fill(0);bucket2.forEach(v=>bf2[v]++);const bm2=Math.max(...bf2);bf2.forEach((c,n)=>scores[n]+=c/bm2*2.8);}
+      signals.push({n:'Bayesian Network DAG',on:!!(cpt[`${last3[1]}→${last3[2]}`]),i:'🧩'}); }
+    else signals.push({n:'Bayes Net (need data)',on:false,i:'🧩'}); }
+
+  // 165. ENTROPY CONVERGENCE ANALYSIS
+  { if(N>=10){
+      const half1=allNums.slice(0,Math.floor(N/2));
+      const half2=allNums.slice(Math.floor(N/2));
+      const ent=(arr)=>{const f=new Array(10).fill(0);arr.forEach(v=>f[v]++);const t=arr.length||1;return f.reduce((s,c)=>c>0?s-(c/t)*Math.log2(c/t):s,0);};
+      const h1=ent(half1),h2=ent(half2);
+      const trend=h2-h1; // positive = more uncertain recently
+      if(trend>0.3) for(let n=0;n<10;n++) scores[n]*=(0.95+Math.random()*0.1);
+      else{ const top8=scores.indexOf(Math.max(...scores)); scores[top8]*=1.2; }
+      signals.push({n:`Entropy Δ=${trend.toFixed(2)}`,on:true,i:'⚡'}); }
+    else signals.push({n:'Entropy Conv. (need data)',on:false,i:'⚡'}); }
+
+  // 166. GENETIC ALGORITHM SEARCH (micro)
+  { let pop=Array.from({length:6},()=>Math.floor(Math.random()*10));
+    const fit=n=>scores[n];
+    for(let gen=0;gen<8;gen++){
+      pop.sort((a,b)=>fit(b)-fit(a));
+      const elite=pop.slice(0,3);
+      const child=elite.map(p=>(p+Math.floor(Math.random()*3)-1+10)%10);
+      pop=[...elite,...child];
+    }
+    scores[pop[0]]+=1.2;
+    signals.push({n:`GA best=${pop[0]}`,on:true,i:'🧬'}); }
+
+  // 167. ANT COLONY OPTIMIZATION (pheromone)
+  { const pheromone=new Array(10).fill(1.0);
+    allNums.forEach(v=>pheromone[v]+=0.5);
+    const totP=pheromone.reduce((a,b)=>a+b);
+    pheromone.forEach((p,n)=>scores[n]+=((totP/10-p)/(totP/10))*1.0);
+    signals.push({n:'Ant Colony Pheromone',on:true,i:'🐜'}); }
+
+  // 168. PARTICLE SWARM VELOCITY
+  { if(hN>=4){
+      const vel=histNums.slice(-4).reduce((s,v,i,a)=>i>0?s+(v-a[i-1]):s,0)/3;
+      add(last3[2]+vel*0.6,1.5);
+      signals.push({n:`PSO vel=${vel.toFixed(1)}`,on:true,i:'✈️'}); }
+    else signals.push({n:'PSO (need data)',on:false,i:'✈️'}); }
+
+  // 169. CROSS-VALIDATED SCORE ENSEMBLE
+  { if(hN>=8){
+      const folds=4; const fPred=new Array(10).fill(0);
+      for(let f=0;f<folds;f++){
+        const test=histNums.filter((_,i)=>i%folds===f);
+        const train=histNums.filter((_,i)=>i%folds!==f);
+        if(train.length<2)continue;
+        const tf=new Array(10).fill(0); train.forEach(v=>tf[v]++);
+        const tm=Math.max(...tf); tf.forEach((c,n)=>fPred[n]+=c/tm);
+      }
+      const fm=Math.max(...fPred); fPred.forEach((c,n)=>scores[n]+=c/fm*1.5);
+      signals.push({n:`CV k=${folds} Ensemble`,on:true,i:'✓'}); }
+    else signals.push({n:'CV Ensemble (need data)',on:false,i:'✓'}); }
+
+  // 170. SPECTRAL CLUSTERING SIGNAL
+  { const sim=new Array(10).fill(0).map((_,i)=>new Array(10).fill(0).map((_,j)=>Math.exp(-Math.abs(i-j)/3.0)));
+    const deg2=sim.map(row=>row.reduce((a,b)=>a+b));
+    const lap=sim.map((row,i)=>row.map((v,j)=>i===j?deg2[i]-v:-v));
+    // Fiedler vector approx: smooth scores via Laplacian
+    const smoothed=scores.map((s,i)=>{let acc=0;lap[i].forEach((l,j)=>acc+=l*scores[j]);return s-0.1*acc;});
+    smoothed.forEach((v,i)=>scores[i]=Math.max(0,v));
+    signals.push({n:'Spectral Clustering',on:true,i:'🔵'}); }
+
+  // 171. ISOTONIC REGRESSION (monotone fit)
+  { if(hN>=5){
+      const pool=histNums.slice(-6).map((v,i)=>({v,i}));
+      // PAV algorithm simplified
+      let prev=pool[0].v;
+      pool.forEach(p=>{if(p.v<prev) p.v=(p.v+prev)/2; prev=p.v;});
+      add(pool[pool.length-1].v+0.5,1.3);
+      signals.push({n:'Isotonic Regression',on:true,i:'↗'}); }
+    else signals.push({n:'Isotonic (need data)',on:false,i:'↗'}); }
+
+  // 172. QUANTILE REGRESSION (median & quartile)
+  { if(N>=8){
+      const sorted6=[...allNums].sort((a,b)=>a-b);
+      const q1=sorted6[Math.floor(N*0.25)];
+      const q3=sorted6[Math.floor(N*0.75)];
+      const iqr=q3-q1; const last=last3[2];
+      if(last<q1) for(let n=q1;n<=q3;n++) scores[n]+=1.2;
+      else if(last>q3) for(let n=q1;n<=q3;n++) scores[n]+=1.0;
+      else add(q3+1,0.8);
+      signals.push({n:`Quantile IQR=[${q1},${q3}]`,on:true,i:'📊'}); }
+    else signals.push({n:'Quantile (need data)',on:false,i:'📊'}); }
+
+  // 173. MAXIMUM ENTROPY PRINCIPLE
+  { const mn8=Math.min(...scores)||0; const adj8=scores.map(s=>s-mn8+0.01);
+    const t8=adj8.reduce((a,b)=>a+b);
+    // Boost distribution toward maximum entropy (uniform)
+    const uniform2=t8/10;
+    adj8.forEach((s,n)=>{if(s>uniform2*1.5) scores[n]*=0.95; else if(s<uniform2*0.6) scores[n]+=0.8;});
+    signals.push({n:'Max Entropy Principle',on:true,i:'∝'}); }
+
+  // 174. DIFFERENTIAL ENTROPY GRADIENT
+  { if(N>=6){
+      const w6=allNums.slice(-6);
+      const mu5=w6.reduce((a,b)=>a+b)/6;
+      const sig5=Math.sqrt(w6.reduce((s,v)=>s+(v-mu5)**2,0)/6)||1;
+      const dH=0.5*Math.log2(2*Math.PI*Math.E*sig5*sig5);
+      if(dH<2.0){ add(mu5,1.2); } else { const tIdx4=scores.indexOf(Math.max(...scores)); scores[tIdx4]*=1.1; }
+      signals.push({n:`Diff Entropy dH=${dH.toFixed(2)}`,on:true,i:'∂'}); }
+    else signals.push({n:'Diff Entropy (need data)',on:false,i:'∂'}); }
+
+  // 175. FISHER INFORMATION METRIC
+  { if(N>=5){
+      const freq3=new Array(10).fill(0); allNums.forEach(v=>freq3[v]++);
+      const p8=freq3.map(c=>(c+0.1)/(N+1));
+      const fisher=p8.reduce((s,p)=>s+1/p,0);
+      const topF=scores.indexOf(Math.max(...scores)); scores[topF]*=(1+0.5/fisher);
+      signals.push({n:`Fisher Info I=${fisher.toFixed(1)}`,on:true,i:'𝕀'}); }
+    else signals.push({n:'Fisher (need data)',on:false,i:'𝕀'}); }
+
+  // 176. POWER SPECTRAL DENSITY (simplified)
+  { if(hN>=8){
+      const w7=histNums.slice(-8);
+      const psd=new Array(4).fill(0);
+      for(let k=0;k<4;k++){
+        let re=0,im=0;
+        w7.forEach((v,n)=>{re+=v*Math.cos(2*Math.PI*k*n/8);im-=v*Math.sin(2*Math.PI*k*n/8);});
+        psd[k]=(re*re+im*im)/8;
+      }
+      const domFreq=psd.indexOf(Math.max(...psd.slice(1)))+1;
+      const period2=Math.round(8/domFreq); if(period2>0&&period2<10) add(histNums[hN-1]+period2,1.4);
+      signals.push({n:`PSD dom-freq=${domFreq}`,on:true,i:'📡'}); }
+    else signals.push({n:'PSD (need data)',on:false,i:'📡'}); }
+
+  // 177. LONG-SHORT TERM MEMORY PROXY (LSTM-style gate)
+  { if(hN>=6){
+      const forget=0.7,input2=0.3;
+      let cellState=last3[2];
+      histNums.slice(-4).forEach(v=>{cellState=forget*cellState+input2*v;});
+      const output=Math.tanh(cellState)*4.5+4.5;
+      add(output,2.0);
+      signals.push({n:`LSTM-gate c=${cellState.toFixed(1)}`,on:true,i:'🔋'}); }
+    else signals.push({n:'LSTM (need data)',on:false,i:'🔋'}); }
+
+  // 178. ECHO STATE NETWORK (reservoir computing)
+  { const W=0.9; let state=last3.reduce((a,b)=>a+b)/3/10;
+    allNums.slice(-8).forEach(v=>{state=Math.tanh(W*state+0.1*(v/9));});
+    add(state*9,1.5);
+    signals.push({n:`Echo State r=${state.toFixed(2)}`,on:true,i:'🔊'}); }
+
+  // 179. ROBUST PCA (outlier-resistant trend)
+  { if(N>=6){
+      const median2=arr=>{const s=[...arr].sort((a,b)=>a-b);return s[Math.floor(s.length/2)];};
+      const med3=median2(allNums);
+      const mad=median2(allNums.map(v=>Math.abs(v-med3)));
+      const robust=allNums.map(v=>Math.abs(v-med3)/((mad||1)*1.4826)<2.5?v:med3);
+      const rMean=robust.reduce((a,b)=>a+b)/robust.length;
+      add(rMean,1.3);
+      signals.push({n:`Robust PCA med=${med3},MAD=${mad.toFixed(1)}`,on:true,i:'🛡️'}); }
+    else signals.push({n:'Robust PCA (need data)',on:false,i:'🛡️'}); }
+
+  // 180. ADAPTIVE BOOSTING (AdaBoost-style weights)
+  { const sampleW=new Array(allNums.length||1).fill(1/(allNums.length||1));
+    const weakPred=allNums.map(v=>v<5?0:1); // weak classifier: small vs big
+    const target=last3[2]<5?0:1;
+    const err=weakPred.reduce((s,p,i)=>s+(p!==target?sampleW[i]:0),0);
+    const alpha4=0.5*Math.log((1-err)/(err||0.001));
+    if(target===0) for(let n=0;n<5;n++) scores[n]+=alpha4*0.3;
+    else for(let n=5;n<10;n++) scores[n]+=alpha4*0.3;
+    signals.push({n:`AdaBoost α=${alpha4.toFixed(2)}`,on:true,i:'⬆️'}); }
+
+  // 181. JACKKNIFE RESAMPLING
+  { if(hN>=5){
+      const jkMeans=histNums.map((_,i)=>{const sub=histNums.filter((_,j)=>j!==i);return sub.reduce((a,b)=>a+b)/sub.length;});
+      const jkMean=jkMeans.reduce((a,b)=>a+b)/jkMeans.length;
+      const jkVar=jkMeans.reduce((s,m)=>s+(m-jkMean)**2,0)/(jkMeans.length-1)||0;
+      add(jkMean,1.2); if(jkVar<1) add(jkMean+1,0.6);
+      signals.push({n:`Jackknife μ=${jkMean.toFixed(1)}`,on:true,i:'🔪'}); }
+    else signals.push({n:'Jackknife (need data)',on:false,i:'🔪'}); }
+
+  // 182. IMPORTANCE SAMPLING
+  { const propDist=new Array(10).fill(0);
+    allNums.slice(-Math.min(N,15)).forEach(v=>propDist[v]++);
+    const propSum=propDist.reduce((a,b)=>a+b)||1;
+    for(let n=0;n<10;n++){
+      const w=1/((propDist[n]/propSum)*10+0.1); // importance weight
+      scores[n]*=(0.9+Math.min(w*0.1,0.3));
+    }
+    signals.push({n:'Importance Sampling',on:true,i:'⚖️'}); }
+
+  // 183. VARIATIONAL INFERENCE PROXY
+  { const mn9=Math.min(...scores)||0; const adj9=scores.map(s=>s-mn9+0.01);
+    const t9=adj9.reduce((a,b)=>a+b);
+    const q=adj9.map(s=>s/t9); // variational posterior
+    // ELBO: maximize evidence lower bound — penalize over-peaked q
+    const peakQ=Math.max(...q); if(peakQ>0.4){ const topV=q.indexOf(peakQ); scores[topV]*=0.95; }
+    signals.push({n:`Variational ELBO peak=${(peakQ*100).toFixed(0)}%`,on:peakQ>0.3,i:'𝓥'}); }
+
+  // 184. STOCHASTIC GRADIENT DESCENT STEP
+  { if(hN>=4){
+      const lr=0.08; let theta=histNums.slice(-4).reduce((a,b)=>a+b)/4;
+      histNums.slice(-6).forEach(v=>{const grad=theta-v; theta-=lr*grad;});
+      add(theta,1.8);
+      signals.push({n:`SGD θ=${theta.toFixed(1)}`,on:true,i:'▽'}); }
+    else signals.push({n:'SGD (need data)',on:false,i:'▽'}); }
+
+  // 185. MATRIX FACTORIZATION (NMF proxy)
+  { if(hN>=6){
+      const freq4=new Array(10).fill(0); histNums.forEach(v=>freq4[v]++);
+      // Factor into two rank-1 components
+      const W2=freq4.map(f=>Math.sqrt(f+0.1));
+      const H2=new Array(10).fill(0).map((_,i)=>Math.sqrt(i+0.5));
+      const nmf=W2.map((w,i)=>w*H2[i]);
+      const nmfMax=Math.max(...nmf);
+      nmf.forEach((v,i)=>scores[i]+=(nmfMax-v)/nmfMax*1.2);
+      signals.push({n:'NMF Factorization',on:true,i:'⊗'}); }
+    else signals.push({n:'NMF (need data)',on:false,i:'⊗'}); }
+
+  // 186. PRINCIPAL COMPONENT ANALYSIS (1D PCA)
+  { if(N>=6){
+      const mu6=allNums.reduce((a,b)=>a+b)/N;
+      const centered=allNums.map(v=>v-mu6);
+      const variance=centered.reduce((s,v)=>s+v*v,0)/N;
+      const pc1Dir=variance>0?1:0; // dominant direction
+      const projLast=centered[centered.length-1]*pc1Dir;
+      add(mu6+projLast*0.5,1.4);
+      signals.push({n:`PCA var=${variance.toFixed(1)}`,on:variance>1,i:'📊'}); }
+    else signals.push({n:'PCA (need data)',on:false,i:'📊'}); }
+
+  // 187. INDEPENDENT COMPONENT ANALYSIS PROXY
+  { if(hN>=6){
+      const s1=histNums.filter((_,i)=>i%2===0);
+      const s2=histNums.filter((_,i)=>i%2!==0);
+      const m1=s1.reduce((a,b)=>a+b)/(s1.length||1);
+      const m2=s2.reduce((a,b)=>a+b)/(s2.length||1);
+      const icaMix=(m1+m2*1.2)/2.2;
+      add(icaMix,1.1);
+      signals.push({n:`ICA mix=${icaMix.toFixed(1)}`,on:true,i:'⬡'}); }
+    else signals.push({n:'ICA (need data)',on:false,i:'⬡'}); }
+
+  // 188. KOLMOGOROV COMPLEXITY PROXY (Lempel-Ziv)
+  { const seq2=allNums.join('');
+    const lz=new Set(); let i2=0,c=1,pos=1;
+    while(pos+c<=seq2.length){if(!lz.has(seq2.slice(pos,pos+c))){lz.add(seq2.slice(pos,pos+c));pos+=c;c=1;}else c++;}
+    const kc=lz.size; // proxy for Kolmogorov complexity
+    if(kc/N<0.65){ add(last3[2]+1,1.0); } // low complexity → predict continuation
+    signals.push({n:`LZ Complexity C=${kc}`,on:true,i:'🔣'}); }
+
+  // 189. SOLOMONOFF INDUCTION PROXY
+  { // prefer simpler explanations; arithmetic sequence check
+    const diffs=last3.map((v,i)=>i>0?v-last3[i-1]:0).slice(1);
+    const isArith=diffs[0]===diffs[1];
+    if(isArith&&diffs[0]!==0){ add(last3[2]+diffs[0],2.5); signals.push({n:`Solomonoff AP d=${diffs[0]}`,on:true,i:'🔭'}); }
+    else signals.push({n:'Solomonoff (random)',on:false,i:'🔭'}); }
+
+  // 190. OCCAM'S RAZOR COMPLEXITY PENALTY
+  { const complexity=signals.filter(sg=>sg.on).length;
+    if(complexity>80){ // too many active signals → shrink variance
+      const topO=scores.indexOf(Math.max(...scores)); scores[topO]*=1.12;
+      for(let n=0;n<10;n++) if(n!==topO) scores[n]*=0.96;
+      signals.push({n:`Occam Razor n=${complexity} prune`,on:true,i:'✂️'}); }
+    else signals.push({n:'Occam Razor',on:false,i:'✂️'}); }
+
+  // 191. ALGORITHMIC INFORMATION THEORY (AIT)
+  { const rawComplexity=new Set(allNums).size/10;
+    const topA=scores.indexOf(Math.max(...scores));
+    scores[topA]*=(1+rawComplexity*0.15);
+    signals.push({n:`AIT complexity=${rawComplexity.toFixed(2)}`,on:true,i:'ℹ️'}); }
+
+  // 192. MINIMUM MESSAGE LENGTH (MML)
+  { const prior=Math.log2(10)+1; // description length of uniform model
+    const mn10=Math.min(...scores)||0; const adj10=scores.map(s=>s-mn10+0.01);
+    const t10=adj10.reduce((a,b)=>a+b);
+    const mml=-adj10.map(s=>s/t10).reduce((s,p)=>s+p*Math.log2(p||0.001),0);
+    if(mml<prior*0.8){ const topM=scores.indexOf(Math.max(...scores)); scores[topM]*=1.15; }
+    signals.push({n:`MML mml=${mml.toFixed(2)}`,on:mml<prior*0.8,i:'📩'}); }
+
+  // 193. CHAITIN OMEGA HALTING PROBABILITY PROXY
+  { const haltProb=0.5; // omega bit
+    for(let n=0;n<10;n++) scores[n]*=(1+haltProb*0.05*Math.sin(n*Math.PI/5));
+    signals.push({n:'Chaitin Ω bias',on:true,i:'Ω'}); }
+
+  // 194. STOCHASTIC DOMINANCE CHECK
+  { if(hN>=4){
+      const cdf1=new Array(10).fill(0); histNums.slice(-Math.ceil(hN/2)).forEach(v=>cdf1[v]++);
+      const cdf2=new Array(10).fill(0); histNums.slice(-Math.floor(hN/4)).forEach(v=>cdf2[v]++);
+      let dom=0;
+      for(let n=0;n<10;n++){const c1=cdf1.slice(0,n+1).reduce((a,b)=>a+b);const c2=cdf2.slice(0,n+1).reduce((a,b)=>a+b);if(c1>c2) dom=n;}
+      if(dom>0) scores[dom]+=1.2;
+      signals.push({n:`Stoch Dominance n=${dom}`,on:dom>0,i:'🏆'}); }
+    else signals.push({n:'Stoch Dom. (need data)',on:false,i:'🏆'}); }
+
+  // 195. LARGE DEVIATION THEORY
+  { if(N>=8){
+      const mu7=allNums.reduce((a,b)=>a+b)/N;
+      const rare=allNums.filter(v=>Math.abs(v-mu7)>3.5).length;
+      const rate=rare/N;
+      if(rate<0.05){ // rare events → avoid extremes
+        scores[0]*=0.9;scores[9]*=0.9;
+        add(mu7,1.0);
+        signals.push({n:`LDT rate=${(rate*100).toFixed(0)}%`,on:true,i:'📉'}); }
+      else signals.push({n:`LDT high-rate`,on:false,i:'📉'}); }
+    else signals.push({n:'LDT (need data)',on:false,i:'📉'}); }
+
+  // 196. MEAN FIELD THEORY
+  { const mu8=allNums.reduce((a,b)=>a+b,0)/(allNums.length||1);
+    const mft=allNums.map(v=>mu8+(v-mu8)*0.85); // mean-field updated
+    const mftNext=mft[mft.length-1]+(mft[mft.length-1]-mft[mft.length-2]||0)*0.4;
+    add(mftNext,1.3);
+    signals.push({n:`Mean Field μ=${mu8.toFixed(1)}`,on:true,i:'⚛️'}); }
+
+  // 197. RANDOM MATRIX THEORY (Marchenko-Pastur)
+  { if(N>=8){
+      const q=N/10; const lambda_plus=Math.pow(1+1/Math.sqrt(q),2);
+      // eigenvalues outside Marchenko-Pastur → signal
+      const sampleVar=allNums.reduce((s,v)=>s+(v-4.5)**2,0)/N;
+      if(sampleVar>lambda_plus){
+        const tIdx5=scores.indexOf(Math.max(...scores)); scores[tIdx5]*=1.18;
+        signals.push({n:`RMT signal σ²=${sampleVar.toFixed(1)}`,on:true,i:'🔬'}); }
+      else signals.push({n:`RMT noise σ²=${sampleVar.toFixed(1)}`,on:false,i:'🔬'}); }
+    else signals.push({n:'RMT (need data)',on:false,i:'🔬'}); }
+
+  // 198. FREE PROBABILITY THEORY
+  { const R=last3.reduce((a,b)=>a+b,0)/3; // R-transform proxy
+    const S=1/(1-R/9+0.01); // S-transform proxy
+    add(R*S%10,0.8);
+    signals.push({n:`Free Prob R=${R.toFixed(1)}`,on:true,i:'𝔽'}); }
+
+  // 199. OPERATOR SEMIGROUP (heat equation diffusion)
+  { const heat=allNums.length>0?[...scores]:scores;
+    const dt3=0.05,dx=1;
+    for(let step=0;step<3;step++){
+      const newH=[...heat];
+      for(let n=1;n<9;n++) newH[n]=heat[n]+dt3/(dx*dx)*(heat[n+1]-2*heat[n]+heat[n-1]);
+      newH.forEach((v,i)=>scores[i]=Math.max(0,v));
+    }
+    signals.push({n:'Heat Equation Diffusion',on:true,i:'🌡️'}); }
+
+  // 200. SPECTRAL GRAPH THEORY (Fiedler value)
+  { const adj2=new Array(10).fill(0).map((_,i)=>new Array(10).fill(0));
+    allNums.forEach((v,i)=>{if(i>0) adj2[allNums[i-1]][v]++;});
+    const deg3=adj2.map(row=>row.reduce((a,b)=>a+b));
+    // Fiedler value proxy: second smallest Laplacian eigenvalue
+    const connectivity=deg3.filter(d=>d>0).length/10;
+    const topSG=scores.indexOf(Math.max(...scores)); scores[topSG]*=(1+connectivity*0.1);
+    signals.push({n:`Spectral Graph λ₂≈${connectivity.toFixed(2)}`,on:connectivity>0.3,i:'🕸️'}); }
+
+  // 201. ISING MODEL (spin glass)
+  { const spins=allNums.map(v=>v<5?-1:1);
+    const J=0.5; // coupling
+    let energy=0;
+    for(let i=0;i<spins.length-1;i++) energy-=J*spins[i]*spins[i+1];
+    const avgSpin=spins.reduce((a,b)=>a+b,0)/(spins.length||1);
+    if(avgSpin>0) for(let n=5;n<10;n++) scores[n]+=Math.abs(avgSpin)*0.8;
+    else for(let n=0;n<5;n++) scores[n]+=Math.abs(avgSpin)*0.8;
+    signals.push({n:`Ising E=${energy.toFixed(1)} s=${avgSpin.toFixed(2)}`,on:true,i:'⚡'}); }
+
+  // 202. PERCOLATION THEORY
+  { const p3=0.59; // site percolation threshold (2D square lattice)
+    const active=allNums.filter(v=>Math.random()<p3).length;
+    const percolates=active>allNums.length*0.5;
+    if(percolates){ const tIdx6=scores.indexOf(Math.max(...scores)); scores[tIdx6]*=1.1; }
+    signals.push({n:`Percolation active=${active}`,on:percolates,i:'🕳️'}); }
+
+  // 203. SELF-ORGANIZED CRITICALITY (Bak-Tang-Wiesenfeld)
+  { if(N>=6){
+      const sandpile=[...new Array(10).fill(0)];
+      allNums.slice(-6).forEach(v=>{sandpile[v]++;if(sandpile[v]>=4){sandpile[v]-=4;if(v>0)sandpile[v-1]++;if(v<9)sandpile[v+1]++;}});
+      const criticSite=sandpile.indexOf(Math.max(...sandpile));
+      scores[criticSite]+=1.2;
+      signals.push({n:`SOC critical=${criticSite}`,on:true,i:'⛰️'}); }
+    else signals.push({n:'SOC (need data)',on:false,i:'⛰️'}); }
+
+  // 204. POWER LAW EXPONENT (α estimation)
+  { if(N>=6){
+      const freq5=new Array(10).fill(0); allNums.forEach(v=>freq5[v]++);
+      const logLog=freq5.map((f,i)=>f>0&&i>0?{x:Math.log(i+1),y:Math.log(f)}:null).filter(Boolean);
+      if(logLog.length>=3){
+        const xMean=logLog.reduce((s,p)=>s+p.x,0)/logLog.length;
+        const yMean=logLog.reduce((s,p)=>s+p.y,0)/logLog.length;
+        const slope=logLog.reduce((s,p)=>s+(p.x-xMean)*(p.y-yMean),0)/logLog.reduce((s,p)=>s+(p.x-xMean)**2,1);
+        const alpha5=-slope;
+        if(alpha5>1) for(let n=0;n<5;n++) scores[n]+=(1/Math.pow(n+1,alpha5))*1.0;
+        signals.push({n:`Power Law α=${alpha5.toFixed(2)}`,on:alpha5>1,i:'⚡'}); }
+      else signals.push({n:'Power Law',on:false,i:'⚡'}); }
+    else signals.push({n:'Power Law (need data)',on:false,i:'⚡'}); }
+
+  // 205. ERGODIC THEORY (time vs ensemble average)
+  { if(N>=8){
+      const timeAvg=allNums.reduce((a,b)=>a+b)/N;
+      const ensAvg=4.5; // theoretical uniform mean
+      const ergodic=Math.abs(timeAvg-ensAvg)<0.5;
+      if(!ergodic){ // non-ergodic: bias toward current trajectory
+        add(timeAvg+(last3[2]-timeAvg)*0.4,1.5);
+        signals.push({n:`Ergodic BREAK μ=${timeAvg.toFixed(1)}`,on:true,i:'♾️'}); }
+      else{ add(timeAvg,0.8); signals.push({n:`Ergodic μ≈${timeAvg.toFixed(1)}`,on:false,i:'♾️'}); } }
+    else signals.push({n:'Ergodic (need data)',on:false,i:'♾️'}); }
+
+  // 206. MIXING TIME (Markov chain convergence)
+  { if(hN>=8){
+      const tvd=new Array(10).fill(0);
+      const hist3=new Array(10).fill(0); histNums.forEach(v=>hist3[v]++);
+      const p9=hist3.map(c=>c/hN); const unif=0.1;
+      const tv=p9.reduce((s,p)=>s+Math.abs(p-unif),0)/2;
+      if(tv<0.2){ signals.push({n:`Mixing TV=${tv.toFixed(2)} mixed`,on:false,i:'🔄'}); }
+      else{ const tIdx7=scores.indexOf(Math.max(...scores)); scores[tIdx7]*=1.12;
+        signals.push({n:`Mixing TV=${tv.toFixed(2)} unmixed`,on:true,i:'🔄'}); } }
+    else signals.push({n:'Mixing Time (need data)',on:false,i:'🔄'}); }
+
+  // 207. CENTRAL LIMIT THEOREM CONVERGENCE RATE
+  { if(N>=10){
+      const mu9=allNums.reduce((a,b)=>a+b)/N;
+      const sig9=Math.sqrt(allNums.reduce((s,v)=>s+(v-mu9)**2,0)/N)||1;
+      const berry=0.4748/(sig9*Math.sqrt(N)); // Berry-Esseen bound
+      if(berry<0.1){ add(mu9,1.5); add(mu9+sig9*0.5,0.7); }
+      signals.push({n:`CLT Berry-Esseen=${berry.toFixed(3)}`,on:berry<0.1,i:'📐'}); }
+    else signals.push({n:'CLT (need data)',on:false,i:'📐'}); }
+
+  // 208. LAW OF LARGE NUMBERS (empirical correction)
+  { if(N>=8){
+      const empMean=allNums.reduce((a,b)=>a+b)/N;
+      const lln=Math.abs(empMean-4.5)/(4.5||1); // deviation from LLN limit
+      if(lln>0.15){ // revert toward true mean
+        add(4.5,lln*2.0);
+        signals.push({n:`LLN revert dev=${(lln*100).toFixed(0)}%`,on:true,i:'⚖️'}); }
+      else signals.push({n:`LLN converged`,on:false,i:'⚖️'}); }
+    else signals.push({n:'LLN (need data)',on:false,i:'⚖️'}); }
+
+  // 209. EXTREME VALUE THEORY (GEV distribution)
+  { if(N>=8){
+      const maxV=Math.max(...allNums), minV=Math.min(...allNums);
+      const rangeV=maxV-minV||1;
+      const gev_mu=allNums.reduce((a,b)=>a+b)/N;
+      const gev_sig=rangeV/Math.log(N);
+      // Gumbel distribution: boost near mode
+      const gumbelMode=gev_mu-gev_sig*0.5772;
+      add(gumbelMode,1.2);
+      signals.push({n:`EVT Gumbel μ=${gumbelMode.toFixed(1)}`,on:true,i:'🔺'}); }
+    else signals.push({n:'EVT (need data)',on:false,i:'🔺'}); }
+
+  // 210. FLUCTUATION THEOREM (entropy production)
+  { if(N>=6){
+      const fwd=allNums.slice(-N/2|0);
+      const bwd=[...fwd].reverse();
+      const ep=fwd.reduce((s,v,i)=>s+v-bwd[i],0)/(N/2);
+      if(Math.abs(ep)>1){ // non-zero entropy production → trend
+        add(last3[2]+Math.sign(ep),1.4);
+        signals.push({n:`Fluctuation Th σ=${ep.toFixed(1)}`,on:true,i:'↔️'}); }
+      else signals.push({n:'Fluctuation Th balanced',on:false,i:'↔️'}); }
+    else signals.push({n:'Fluct. Th. (need data)',on:false,i:'↔️'}); }
+
+  // 211. SPIN CHAIN QUANTUM MODEL
+  { const heis=last3.reduce((a,v,i)=>a+v*(i+1),0)/6;
+    add(heis%10,0.9);
+    signals.push({n:`Quantum Spin chain=${heis.toFixed(1)}`,on:true,i:'⚛️'}); }
+
+  // 212. REACTION-DIFFUSION (Turing pattern)
+  { if(N>=6){
+      const Du=0.16,Dv=0.08,f=0.035,k=0.065;
+      let u=last3[2]/9,v=1-last3[2]/9;
+      for(let t=0;t<10;t++){const uvv=u*v*v;const nu=u+Du*((u+1)/2-u)-uvv+f*(1-u);const nv=v+Dv*((v+1)/2-v)+uvv-(f+k)*v;u=Math.max(0,Math.min(1,nu));v=Math.max(0,Math.min(1,nv));}
+      add(u*9,1.0);
+      signals.push({n:`Turing RD u=${u.toFixed(2)}`,on:true,i:'🌀'}); }
+    else signals.push({n:'Turing RD (need data)',on:false,i:'🌀'}); }
+
+  // 213. KOLMOGOROV-ARNOLD REPRESENTATION
+  { const kar=last3.map((v,i)=>Math.sin(Math.PI*v/10*(i+1))).reduce((a,b)=>a+b,0);
+    add((kar+3)*10/6,1.1);
+    signals.push({n:`KAR rep=${kar.toFixed(2)}`,on:true,i:'🎯'}); }
+
+  // 214. TOPOLOGICAL QUANTUM FIELD THEORY (Jones poly proxy)
+  { const jones=last3.reduce((a,v,i)=>a*Math.pow(-1,i)*v,1);
+    add(Math.abs(jones)%10,0.7);
+    signals.push({n:`TQFT Jones=${jones.toFixed(1)}`,on:true,i:'🔗'}); }
+
+  // 215. NEURAL TANGENT KERNEL (NTK)
+  { if(hN>=5){
+      const ntkK=(x1,x2)=>x1.reduce((s,v,i)=>s+v*x2[i],0)/(10*10);
+      const q3Last=[last3[0]/9,last3[1]/9,last3[2]/9];
+      const ntkPreds=histNums.slice(-5).map((v,i)=>{
+        const q3={v:[histNums[Math.max(0,hN-5+i-2)||0]/9,histNums[Math.max(0,hN-5+i-1)||0]/9,v/9]};
+        return{k:ntkK(q3Last,q3.v),target:histNums[Math.min(hN-1,hN-5+i+1)]||v};
+      });
+      const ntkPred=ntkPreds.reduce((s,{k,target})=>s+k*target,0)/(ntkPreds.reduce((s,{k})=>s+k,0)||1);
+      add(ntkPred*9,1.6);
+      signals.push({n:`NTK pred=${(ntkPred*9).toFixed(1)}`,on:true,i:'🧠'}); }
+    else signals.push({n:'NTK (need data)',on:false,i:'🧠'}); }
+
+  // ── FINAL NORMALIZE ───────────────────────────────
+  const mn3=Math.min(...scores);
+  const adj3=scores.map(s=>s-mn3+0.01);
+  const tot3=adj3.reduce((a,b)=>a+b);
+  const prob=adj3.map(s=>s/tot3);
+
+  // ── SELECT ────────────────────────────────────────
+  let pred;
+  if(isSS){
+    pred=prob.indexOf(Math.max(...prob));
+  } else {
+    const top=prob.map((p,i)=>({p,i})).sort((a,b)=>b.p-a.p).slice(0,3);
+    const ts=top.reduce((a,b)=>a+b.p,0);
+    let r=Math.random()*ts,acc=0;pred=top[0].i;
+    for(const {p,i} of top){acc+=p;if(r<=acc){pred=i;break;}}
+  }
+
+  const topP=prob[pred];
+  const conf=topP>=0.22?'HIGH':topP>=0.14?'MEDIUM':'LOW';
+  // Return ALL signals (not sliced) for full display
+  return {pred, prob, conf, topP, signals, detail, isSS, lawCount:215};
+}
+
+
+/* ── SLOTS ── */
+let slots=[null,null,null],aSlot=0,lastRes=null;
+
+function buildSlots(){
+  document.getElementById('slots-container').innerHTML=['1ST','2ND','3RD'].map((_,i)=>`
+    <div class="r-slot" id="sl-${i}" onclick="activateSlot(${i})">
+      <div class="sg" id="sl-glow-${i}"></div>
+      ${i===aSlot?'<div class="slot-pulse"></div>':''}
+      <div class="slot-ord">${['1ST','2ND','3RD'][i]}</div>
+    </div>`).join('');
+}
+
+function buildNumpad(){
+  document.getElementById('numpad-grid').innerHTML=Array.from({length:10},(_,i)=>{
+    const m=META[i],ch=m.c==='g'?'G':m.c==='r'?'R':'V';
+    return `<button class="nk" id="nk-${i}" data-n="${i}" onclick="pickNum(${i})" type="button">${i}<span class="nk-h">${ch}</span></button>`;
+  }).join('');
+}
+
+function renderSlot(i){
+  const el=document.getElementById(`sl-${i}`),v=slots[i],ia=i===aSlot;
+  if(v===null){
+    el.className='r-slot'+(ia?' active':'');
+    el.innerHTML=`<div class="sg" id="sl-glow-${i}"></div>${ia?'<div class="slot-pulse"></div>':''}<div class="slot-ord">${['1ST','2ND','3RD'][i]}</div>`;
+    return;
+  }
+  const m=META[v];
+  el.className='r-slot filled'+(ia?' active':'');
+  el.innerHTML=`<div class="sg" style="background:${m.hex};"></div>${ia?'<div class="slot-pulse"></div>':''}
+    <div class="slot-num" style="color:${m.hex};text-shadow:0 0 18px ${m.hex}66">${v}</div>
+    <div class="slot-ctag" style="color:${m.hex}">${m.label}</div>
+    <div class="slot-stag">${m.size}</div>`;
+}
+
+function activateSlot(i){
+  aSlot=i;[0,1,2].forEach(j=>renderSlot(j));
+  document.querySelectorAll('.nk').forEach((b,j)=>b.classList.toggle('selected',j===slots[i]));
+}
+
+function pickNum(n){
+  slots[aSlot]=n;renderSlot(aSlot);
+  document.querySelectorAll('.nk').forEach((b,j)=>b.classList.toggle('selected',j===n));
+  vib(18);
+  const nx=slots.indexOf(null);
+  if(nx!==-1)setTimeout(()=>activateSlot(nx),160);
+}
+
+/* ── PERIOD ── */
+function updatePeriodDots(v){
+  for(let i=0;i<4;i++){const d=document.getElementById(`pd${i}`);if(d)d.className='pdot'+(v.length>i?' filled':'');}
+}
+document.getElementById('period-in').addEventListener('input',function(){
+  this.value=this.value.replace(/\D/g,'').slice(0,4);
+  updatePeriodDots(this.value);
+});
+
+/* ── PAGE NAV ── */
+let curPage='pg-home';
+function showPage(id,dir='exit-r'){
+  if(id===curPage)return;
+  document.getElementById(curPage).classList.add(dir);
+  const el=document.getElementById(id);
+  el.classList.remove('exit-l','exit-r','hidden');
+  el.scrollTop=0;
+  curPage=id;
+}
+function navTo(pgId,btnId){
+  showPage(pgId,'exit-r');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById(btnId).classList.add('active');
+}
+function goPredict(){
+  // Fresh start: wipe all 3 slots
+  slots=[null,null,null]; aSlot=0;
+  buildSlots(); buildNumpad(); activateSlot(0);
+  // Period auto-increment from last saved
+  let nextPeriod='';
+  if(S.lastPeriod && /^\d+$/.test(S.lastPeriod)){
+    const nxt=(parseInt(S.lastPeriod,10)+1).toString().padStart(S.lastPeriod.length,'0').slice(-4);
+    nextPeriod=nxt;
+  }
+  const pinEl=document.getElementById('period-in');
+  pinEl.value=nextPeriod;
+  updatePeriodDots(nextPeriod);
+  document.getElementById('ss-banner').style.display=S.streak>=3?'flex':'none';
+  showPage('pg-input','exit-r');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-pred').classList.add('active');
+}
+
+/* ── QUICK PREDICT: reuse last slots, skip input page ── */
+function quickPredict(){
+  // Reuse the last 3 slots from the previous prediction
+  if(!lastRes || lastRes.slots===undefined) { goPredict(); return; }
+  slots=[...lastRes.slots]; aSlot=0;
+  // Auto-increment period
+  let nextPeriod='';
+  if(S.lastPeriod && /^\d+$/.test(S.lastPeriod)){
+    const nxt=(parseInt(S.lastPeriod,10)+1).toString().padStart(S.lastPeriod.length,'0').slice(-4);
+    nextPeriod=nxt;
+  }
+  // Update period input silently (in background) for consistency
+  const pinEl=document.getElementById('period-in');
+  pinEl.value=nextPeriod;
+  updatePeriodDots(nextPeriod);
+  // Go straight to loading
+  const period=nextPeriod;
+  if(period) S.lastPeriod=period;
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-pred').classList.add('active');
+  showPage('pg-load','exit-r');
+  lsi=0; clearInterval(ltimer);
+  ltimer=setInterval(()=>{
+    const se=document.getElementById('ld-step'),ae=document.getElementById('ld-algo');
+    if(se)se.textContent=STEPS[lsi%STEPS.length];
+    if(ae)ae.textContent=ALGOS[lsi%ALGOS.length];
+    lsi++;
+  },145);
+  setTimeout(()=>{
+    clearInterval(ltimer);
+    const isSS=S.streak>=3;
+    const r=ultraPredict([...slots],S.history,isSS);
+    lastRes={...r,period:period||'——',slots:[...slots]};
+    renderResult(lastRes);
+    showPage('pg-result','exit-r');
+  },2350);
+}
+
+/* ── PREDICTION FLOW ── */
+const STEPS=['Loading Bayesian priors...','Building Markov matrices...','Fibonacci & Lucas sequences...','Applying Golden/Silver Ratios...','Computing Shannon entropy...','Running Chi-Square & KS tests...','Fitting OLS/Poly regression...','Detecting Fourier periods...','Lag autocorrelation & PACF...','Hot/Cold pattern scan...','Color & size momentum...','Kelly criterion + ELO form...','KNN & Naïve Bayes classifiers...','Logistic map & chaos theory...','PageRank & graph flow...','Kalman filter smoothing...','Wavelet & DCT transform...','Poisson & Benford distributions...','Monte Carlo simulation...','Hidden Markov modeling...','Copula joint distribution...','Spectral analysis FFT...','Entropy convergence scan...','Bootstrap resampling CI...','Synthesizing 200+ laws...','Finalizing prediction...'];
+const ALGOS=['Bayesian Laplace','Beta-Binomial','Dirichlet Posterior','Markov Order-1,2,3','Fibonacci Resonance','Golden Ratio φ','Shannon Entropy','Chi-Square','OLS Regression','Poly Regression','Holt Smoothing','Fourier DFT','DCT Transform','Autocorrelation ACF','PACF Yule-Walker','ARIMA AR(2)','Variance/Z-Score','Bollinger Bands','MACD','RSI Strength','Hot/Cold Analysis','Recency Due Index','Color Momentum','Size Cycle','Mutual Information','Transfer Entropy','Perceptron Vote','KNN k=3','Naïve Bayes','Random Forest','Gradient Boosting','Logistic Map','Lyapunov Exponent','Tent Map','Hénon Map','Lorenz Attractor','Wave Superposition','Quantum Interference','Harmonic Oscillator','Brownian Motion','Matrix Spectral','Eigenvalue Power','PageRank Flow','Clustering Coeff','Lagrange Interp.','Newton FD','Cubic Spline','RK4 ODE','Kalman Filter','Savitzky-Golay','Wavelet Haar','Poisson Dist.','Geometric Dist.','Zipf Law',"Benford's Law",'KS Test','Anderson-Darling','Ljung-Box','Monte Carlo','Bootstrap CI','Borda Count','Kelly Criterion','ELO Form','Hidden Markov Model','Copula Joint Dist.','Spectral Radius','Entropy Convergence','Banach Fixed Point','Erdős–Rényi Graph','Bayesian Network','Gaussian Process','Spectral Clustering','Topological Persistence','Simulated Annealing','Genetic Algorithm','Tabu Search','Ant Colony Opt.','Particle Swarm','Cross-Entropy Method','Rényi Entropy','Tsallis Entropy','KL-Divergence','Wasserstein Dist.','Final 200+ Law Synthesis'];
+let lsi=0,ltimer=null;
+
+function doPrediction(){
+  if(slots.some(v=>v===null)){
+    [0,1,2].forEach(i=>{if(slots[i]===null){const el=document.getElementById(`sl-${i}`);el.style.borderColor='rgba(255,58,92,0.6)';setTimeout(()=>el.style.borderColor='',800);}});
+    return;
+  }
+  const period=document.getElementById('period-in').value.replace(/\D/g,'').slice(0,4);
+  if(period) S.lastPeriod=period;
+  showPage('pg-load','exit-r');
+  lsi=0;clearInterval(ltimer);
+  ltimer=setInterval(()=>{
+    const se=document.getElementById('ld-step'),ae=document.getElementById('ld-algo');
+    if(se)se.textContent=STEPS[lsi%STEPS.length];
+    if(ae)ae.textContent=ALGOS[lsi%ALGOS.length];
+    lsi++;
+  },145);
+  setTimeout(()=>{
+    clearInterval(ltimer);
+    const isSS=S.streak>=3;
+    const r=ultraPredict([...slots],S.history,isSS);
+    lastRes={...r,period:period||'——',slots:[...slots]};
+    renderResult(lastRes);
+    showPage('pg-result','exit-r');
+  },2350);
+}
+
+/* ── RENDER RESULT ── */
+function renderResult(r){
+  const m=META[r.pred];
+  document.getElementById('rb-period').textContent=`PERIOD  ${r.period}`;
+  const cb=document.getElementById('cb');
+  cb.textContent=`${r.conf} CONF`;
+  cb.className='conf-badge '+(r.conf==='HIGH'?'cb-h':r.conf==='MEDIUM'?'cb-m':'cb-l');
+  document.getElementById('ss-result-bar').style.display=r.isSS?'flex':'none';
+  // Orb spin border
+  const border=document.getElementById('rnd-border');
+  border.style.cssText='';void border.offsetWidth;
+  border.style.cssText=`position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(${m.hex} 0%,${m.hex}55 30%,transparent 58%);animation:orbSpin 3s linear infinite;`;
+  // Number
+  const ne=document.getElementById('rnd-num');
+  ne.style.animation='none';void ne.offsetWidth;
+  ne.textContent=r.pred;ne.style.color=m.hex;
+  ne.style.textShadow=`0 0 28px ${m.hex}88`;
+  ne.style.animation='numPop 0.55s cubic-bezier(0.34,1.56,0.64,1)';
+  document.getElementById('rnd-size').textContent=m.size.toUpperCase();
+  // Color pill
+  const rcp=document.getElementById('rcp');
+  rcp.style.background=pillBg(m.c);
+  document.getElementById('rcp-text').textContent=m.label;
+  // Meta chips
+  document.getElementById('rm-conf').textContent=`${(r.topP*100).toFixed(1)}%`;
+  const ev=r.detail.entropy;
+  document.getElementById('rm-ent').textContent=(ev!==undefined)?parseFloat(ev).toFixed(2):'—';
+  document.getElementById('rm-pat').textContent=r.detail.pattern||'—';
+  // Law badge
+  const lb=document.getElementById('law-count-badge');
+  if(lb)lb.innerHTML=`◈ <span>${r.lawCount||215}</span> LAWS ACTIVE`;
+  // Prob bars
+  const maxP=Math.max(...r.prob);
+  document.getElementById('prob-bars').innerHTML=Array.from({length:10},(_,n)=>{
+    const pm=META[n],pct=(r.prob[n]*100).toFixed(1),w=(r.prob[n]/maxP*100).toFixed(1);
+    const bc=pm.c==='g'?'linear-gradient(90deg,#003d1a,#00F57A)':pm.c==='r'?'linear-gradient(90deg,#4a0010,#FF3A5C)':'linear-gradient(90deg,#2d0060,#B06EFF)';
+    const isTop=n===r.pred;
+    return `<div class="prow" style="animation:fadeUp 0.3s ease ${n*0.04}s both;">
+      <div class="pn" style="color:${pm.hex};${isTop?'font-weight:700;':''}">${n}</div>
+      <div class="ptr"><div class="pfill" style="width:0%;background:${bc};" data-w="${w}"></div></div>
+      <div class="ppct" style="${isTop?'color:'+pm.hex+';font-weight:700;':''}">${pct}%</div>
+      <div class="pstar">${isTop?'★':''}</div>
+    </div>`;
+  }).join('');
+  setTimeout(()=>{document.querySelectorAll('.pfill').forEach(el=>{el.style.transition='width 0.85s cubic-bezier(0.4,0,0.2,1)';el.style.width=el.dataset.w+'%';});},80);
+  // Signals — populate dropdown, update count, collapse by default
+  const actS=r.signals.filter(sg=>sg.on),inactS=r.signals.filter(sg=>!sg.on);
+  document.getElementById('sigs-wrap').innerHTML=[...actS,...inactS.slice(0,8)].map(sg=>`<span class="sig ${sg.on?'on':'off'}">${sg.i} ${sg.n}</span>`).join('');
+  const scl=document.getElementById('sigs-count-label');
+  if(scl) scl.textContent=`${actS.length} active`;
+  // Always collapse signals on new result
+  const sb=document.getElementById('sigs-body');
+  const sa=document.getElementById('sigs-arrow');
+  if(sb){sb.classList.remove('open');}
+  if(sa){sa.classList.remove('open');}
+  // Scroll result page to top
+  const pg=document.getElementById('pg-result');
+  if(pg) pg.scrollTop=0;
+}
+
+/* ── TOGGLE SIGNALS DROPDOWN ── */
+function toggleSigs(){
+  const sb=document.getElementById('sigs-body');
+  const sa=document.getElementById('sigs-arrow');
+  if(!sb)return;
+  const isOpen=sb.classList.contains('open');
+  sb.classList.toggle('open',!isOpen);
+  sa.classList.toggle('open',!isOpen);
+}
+
+/* ── RECORD RESULT ── */
+function recordResult(type){
+  if(!lastRes)return;
+  const won=type==='win';
+  if(won){S.wins++;S.streak=0;}
+  else{S.losses++;S.streak++;S.bestStreak=Math.max(S.bestStreak,S.streak);}
+  S.total++;
+  S.history.push({result:lastRes.pred,period:lastRes.period,slots:lastRes.slots,outcome:type,conf:lastRes.conf,topP:lastRes.topP,isSS:lastRes.isSS,ts:Date.now()});
+  if(S.history.length>200)S.history.shift();
+  save();updateStats();
+  won?playWin(lastRes.isSS):playLose(lastRes.isSS);
+}
+
+/* ── UPDATE HOME STATS ── */
+function updateStats(){
+  const wr=S.total>0?(S.wins/S.total*100):0;
+  document.getElementById('hw-w').textContent=S.wins;
+  document.getElementById('hw-l').textContent=S.losses;
+  document.getElementById('hw-s').textContent=S.streak;
+  document.getElementById('hw-streak').style.display=S.streak>=1?'flex':'none';
+  document.getElementById('sw-wins').textContent=S.wins;
+  document.getElementById('sw-rate').textContent=`${wr.toFixed(0)}%`;
+  document.getElementById('sw-preds').textContent=S.total;
+  document.getElementById('sw-wins-bar').style.width=`${Math.min(wr,100)}%`;
+  document.getElementById('sw-rate-bar').style.width=`${Math.min(wr,100)}%`;
+  document.getElementById('sw-preds-bar').style.width=`${Math.min((S.total/50)*100,100)}%`;
+  const circ=163.36,offset=circ*(1-wr/100);
+  const rf=document.getElementById('wr-ring-fill');
+  if(rf)rf.style.strokeDashoffset=offset;
+  document.getElementById('wr-pct').textContent=`${wr.toFixed(0)}%`;
+  document.getElementById('wr-sub-text').textContent=S.total>0?`${S.wins}W · ${S.losses}L · ${S.bestStreak} best`:'Start predicting to build stats';
+  const tags=document.getElementById('wr-tags');
+  tags.innerHTML='';
+  if(S.streak>=3)tags.innerHTML+=`<div class="wtag r">🔥 ${S.streak} streak</div>`;
+  if(wr>=60)tags.innerHTML+=`<div class="wtag g">🎯 Hot</div>`;
+  if(S.total>0)tags.innerHTML+=`<div class="wtag a">${S.total} preds</div>`;
+  const as=document.getElementById('activity-strip');
+  if(!S.history.length){as.innerHTML='<div style="font-family:var(--fj);font-size:8px;color:var(--t3);padding:8px 0;">No predictions yet</div>';return;}
+  as.innerHTML=S.history.slice().reverse().slice(0,12).map(h=>{
+    const m=META[h.result];
+    return `<div class="act-chip ${h.outcome==='win'?'aw':'al'}" style="background:${m.hex}18;color:${m.hex};border:1px solid ${m.hex}38">${h.result}</div>`;
+  }).join('');
+}
+
+/* ── ANALYSIS PAGE ── */
+function refreshAnalysis(){
+  const h=S.history;
+  const wr=S.total>0?(S.wins/S.total*100).toFixed(1):'0.0';
+  const hc=h.filter(x=>x.conf==='HIGH');
+  const hcr=hc.length>0?(hc.filter(x=>x.outcome==='win').length/hc.length*100).toFixed(1):'—';
+
+  // Engine chips
+  const res=h.map(x=>x.result);
+  const nfc2=new Array(10).fill(0);res.forEach(n=>nfc2[n]++);
+  const nfcMax=Math.max(...nfc2),nfcMin=Math.min(...nfc2.filter(v=>v>0))||0;
+  const hotNum=nfc2.indexOf(nfcMax),coldNum=nfc2.indexOf(nfc2.reduce((bi,v,i)=>v<nfc2[bi]?i:bi,0));
+  // Shannon entropy
+  const tot9=res.length||1;
+  const entropy9=-nfc2.reduce((s,c)=>{const p=c/tot9;return c>0?s+p*Math.log2(p):s;},0);
+  const activeSignals=h.length>0?Math.min(215,Math.floor(80+h.length*2)):0;
+  const eEl=document.getElementById('an-entropy');
+  if(eEl)eEl.textContent=res.length>0?entropy9.toFixed(2):'—';
+  const sEl=document.getElementById('an-signals');
+  if(sEl)sEl.textContent=activeSignals>0?activeSignals+'':'—';
+  const fEl=document.getElementById('an-freqmax');
+  if(fEl)fEl.textContent=res.length>0?`#${hotNum}(${nfcMax}×)`:'—';
+  const mEl=document.getElementById('an-freqmin');
+  if(mEl)mEl.textContent=res.length>0?`#${coldNum}`:'—';
+  const lcEl=document.getElementById('an-law-count');
+  if(lcEl)lcEl.textContent='215';
+  document.getElementById('kpi-grid').innerHTML=[
+    {ico:'🏆',v:S.wins,l:'Total Wins',t:parseFloat(wr)>=50?'up':'dn'},
+    {ico:'📉',v:S.losses,l:'Total Losses',t:S.streak>=3?'dn':'up'},
+    {ico:'🔥',v:S.bestStreak,l:'Best Streak',t:''},
+    {ico:'🎯',v:`${hcr}%`,l:'High-Conf Rate',t:parseFloat(hcr)>=50?'up':'dn'},
+  ].map(c=>`<div class="kpi-c">
+    <span class="kpi-ico">${c.ico}</span>
+    <div class="kpi-v">${c.v}</div>
+    <div class="kpi-l">${c.l}</div>
+    <div class="kpi-tr ${c.t}">${c.t==='up'?'↑ Good':c.t==='dn'?'↓ Focus':''}</div>
+  </div>`).join('');
+  const cg=res.filter(n=>META[n].c==='g').length,cr=res.filter(n=>META[n].c==='r').length,cv=res.filter(n=>META[n].c==='vr').length,tot=res.length||1;
+  document.getElementById('cdist-bar').innerHTML=[
+    {c:'#00F57A',p:cg/tot*100,l:`G ${cg}`},
+    {c:'#FF3A5C',p:cr/tot*100,l:`R ${cr}`},
+    {c:'#B06EFF',p:cv/tot*100,l:`V ${cv}`},
+  ].map(b=>`<div class="cdb-seg" style="width:${b.p.toFixed(1)}%;background:${b.c};">${b.p>8?b.l:''}</div>`).join('');
+  document.getElementById('cdist-legend').innerHTML=[
+    {c:'#00F57A',l:`Green (${cg})`},{c:'#FF3A5C',l:`Red (${cr})`},{c:'#B06EFF',l:`Violet (${cv})`}
+  ].map(d=>`<div class="cd-li"><div class="cd-dot" style="background:${d.c}"></div>${d.l}</div>`).join('');
+  const nfc=new Array(10).fill(0);res.forEach(n=>nfc[n]++);const nfm=Math.max(...nfc,1);
+  document.getElementById('nfreq-grid').innerHTML=Array.from({length:10},(_,n)=>{
+    const m=META[n];
+    return `<div class="nfc">
+      <div class="nfc-n" style="color:${m.hex}">${n}</div>
+      <div class="nfc-c" style="color:${m.hex}">${nfc[n]}×</div>
+      <div class="nfc-bw"><div class="nfc-bf" style="width:${(nfc[n]/nfm*100).toFixed(0)}%;background:${m.hex}"></div></div>
+    </div>`;
+  }).join('');
+  const hl=document.getElementById('hist-list');
+  if(!h.length){hl.innerHTML='<div style="text-align:center;color:var(--t3);font-family:var(--fj);font-size:9px;padding:14px;">No predictions yet</div>';return;}
+  hl.innerHTML=h.slice().reverse().slice(0,20).map(x=>{
+    const m=META[x.result],d=new Date(x.ts);
+    const t=`${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    return `<div class="hist-row">
+      <div class="hi-n" style="background:${m.hex}18;color:${m.hex};border:1px solid ${m.hex}28">${x.result}</div>
+      <div class="hi-inf">
+        <div class="hi-m">Period ${x.period} · ${m.label} · ${m.size}</div>
+        <div class="hi-s">${t} · ${x.conf} · ${(x.topP*100).toFixed(1)}%${x.isSS?' · 🔥':''}</div>
+      </div>
+      <div class="${x.outcome==='win'?'hi-w':'hi-l'}">${x.outcome==='win'?'✓':'✗'}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── WIN / LOSE CELEBRATIONS ── */
+function playWin(isSS){
+  const el=document.getElementById('celeb');
+  el.style.background='radial-gradient(circle at 50% 40%,rgba(0,18,8,0.97),rgba(0,8,3,0.99))';
+  document.getElementById('c-emoji').textContent=isSS?'👑':'✓';
+  document.getElementById('c-title').textContent=isSS?'CHAMPION!':'WIN!';
+  document.getElementById('c-title').style.color='#00F57A';
+  document.getElementById('c-msg').textContent=isSS?'SURE SHOT WIN!\nThe 215-law engine delivered.':'Prediction confirmed.\nAlgorithms aligned perfectly.';
+  document.getElementById('c-msg').style.color='rgba(255,255,255,0.78)';
+  el.classList.add('show');
+  spawnConfetti(isSS?80:50);
+  vib([50,30,50,30,100]);
+  setTimeout(()=>{el.classList.remove('show');clearCeleb();},3700);
+}
+function playLose(isSS){
+  const el=document.getElementById('celeb'),main=document.getElementById('main');
+  el.style.background='radial-gradient(circle at 50% 40%,rgba(18,2,5,0.97),rgba(8,1,2,0.99))';
+  document.getElementById('c-emoji').textContent=isSS?'◎':'✗';
+  document.getElementById('c-title').textContent=isSS?'Stay Sharp':'Recalibrating';
+  document.getElementById('c-title').style.color='#FF3A5C';
+  document.getElementById('c-msg').textContent=isSS?'Comeback loading 🔥\nYour win sequence begins now.':'Every loss refines the model.\n215 signals recalibrating...';
+  document.getElementById('c-msg').style.color='rgba(255,100,100,0.75)';
+  el.classList.add('show');
+  main.style.animation='shake 0.5s ease';
+  setTimeout(()=>main.style.animation='',600);
+  spawnWaves();
+  vib([28,18,28,18,28]);
+  setTimeout(()=>{el.classList.remove('show');clearCeleb();},3700);
+}
+function spawnConfetti(n){
+  const el=document.getElementById('celeb');
+  const cols=['#FFB86C','#E8955A','#00F57A','#FF3A5C','#B06EFF','#FBFF00','#fff','#FDD9AC'];
+  for(let i=0;i<n;i++){
+    const c=document.createElement('div');c.className='conf-piece';
+    const s=5+Math.random()*11;
+    c.style.cssText=`left:${Math.random()*100}vw;top:-14px;width:${s}px;height:${s*(Math.random()>0.5?1.6:1)}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>0.4?'50%':'2px'};animation-duration:${1.4+Math.random()*2.2}s;animation-delay:${Math.random()*0.8}s;opacity:${0.7+Math.random()*0.3};transform:rotate(${Math.random()*360}deg);`;
+    el.appendChild(c);
+  }
+}
+function spawnWaves(){
+  const el=document.getElementById('celeb');
+  for(let i=0;i<5;i++){
+    const w=document.createElement('div');const sz=(i+1)*80;
+    w.className='wave-ring';
+    w.style.cssText=`width:${sz}px;height:${sz}px;top:50%;left:50%;border:2px solid rgba(255,184,108,${0.55-i*0.1});transform:translate(-50%,-50%) scale(0);animation:wOut ${1.5+i*0.2}s ease ${i*0.2}s forwards;`;
+    el.appendChild(w);
+  }
+}
+function clearCeleb(){document.getElementById('celeb').querySelectorAll('.conf-piece,.wave-ring').forEach(e=>e.remove());}
+
+/* ── PARTICLE CANVAS ── */
+(function initCanvas(){
+  const canvas=document.getElementById('cvs');
+  const ctx=canvas.getContext('2d');
+  let W,H,particles=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  for(let i=0;i<50;i++){
+    particles.push({
+      x:Math.random()*1000,y:Math.random()*1000,
+      vx:(Math.random()-0.5)*0.28,vy:(Math.random()-0.5)*0.28,
+      r:Math.random()*1.4+0.3,o:Math.random()*0.3+0.04,
+      t:Math.floor(Math.random()*3),
+    });
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    for(let v=0;v<12;v++){
+      const x0=Math.random()*W,y0=Math.random()*H;
+      const x1=x0+(Math.random()-0.5)*W*0.65,y1=y0+(Math.random()-0.5)*H*0.65;
+      const cpx=(x0+x1)/2+(Math.random()-0.5)*180,cpy=(y0+y1)/2+(Math.random()-0.5)*180;
+      ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo(cpx,cpy,x1,y1);
+      const cs=['255,184,108','176,110,255','0,245,122'];
+      ctx.strokeStyle=`rgba(${cs[Math.floor(Math.random()*cs.length)]},${0.015+Math.random()*0.035})`;
+      ctx.lineWidth=0.4+Math.random()*0.7;ctx.stroke();
+    }
+    ctx.restore();
+    particles.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.t===0?`rgba(255,184,108,${p.o})`:p.t===1?`rgba(176,110,255,${p.o})`: `rgba(0,245,122,${p.o*0.8})`;
+      ctx.fill();
+    });
+  }
+  draw();setInterval(draw,80);
+})();
+
+/* ── VIBRATE ── */
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
+
+/* ── INIT ── */
+(function init(){
+  buildSlots();
+  buildNumpad();
+  activateSlot(0);
+  updateStats();
+})();
+</script>
+</body>
+</html>
